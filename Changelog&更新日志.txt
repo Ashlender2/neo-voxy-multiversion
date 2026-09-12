@@ -1,5 +1,17 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.3.4（1.20.1 Forge 客户端版）— 2026-09-12
+
+### 简体中文
+
+- 修复原版/均衡树叶模式仍将所有树叶强制按实心模型烘焙、关闭 Alpha 丢弃的问题；透明区带黑色 RGB 的模组树叶不再在 LOD 中显示为黑色线框或面框。
+- 统一使用树叶标签与原版树叶类型识别渲染层，使使用自定义方块类但正确加入 `minecraft:leaves` 标签的模组树叶也进入正确的 cutout 路径。
+
+### English
+
+- Fixed all leaves being baked as forced-solid geometry even in original/balanced leaf modes, which disabled alpha discard and exposed the black RGB hidden in transparent texels as dark wireframes or cards in LODs.
+- Unified render-layer leaf detection across the vanilla leaf class and the `minecraft:leaves` tag, so tagged modded leaves using custom block classes also follow the correct cutout path.
+
 ## 0.4.7（1.21.1 NeoForge 联动版）— 2026-09-10
 
 ### 简体中文
