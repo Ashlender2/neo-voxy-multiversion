@@ -1,9 +1,9 @@
 # Neo Voxy — Minecraft 1.20.1 Forge
 
-Neo Voxy 的原生 Minecraft 1.20.1 Forge 移植分支。当前版本为 `0.3.4`，
+Neo Voxy 的原生 Minecraft 1.20.1 Forge 移植分支。当前版本为 `0.3.5`，
 包含核心 LOD 渲染、流体斜坡与通用稳定性修复。
 
-Native Minecraft 1.20.1 Forge port of Neo Voxy. Version 0.3.4 includes core LOD
+Native Minecraft 1.20.1 Forge port of Neo Voxy. Version 0.3.5 includes core LOD
 rendering, fluid slopes, and general stability fixes.
 
 ## 环境要求 / Requirements

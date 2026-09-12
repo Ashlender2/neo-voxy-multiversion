@@ -1,5 +1,17 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.3.5（1.20.1 Forge 客户端版）— 2026-09-12
+
+### 简体中文
+
+- 修复半透明方块被错误标记为 Alpha-cutout，导致玻璃、染色玻璃及部分模组装饰方块在 LOD 烘焙时叠合为黑色线框或面框的问题。
+- 规范化 Forge 模组模型省略的顶点 Alpha，并为藤蔓、花草、栏杆等 cutout 卡片保留双面烘焙，避免整面透明度被清空或背面缺失。
+
+### English
+
+- Fixed translucent blocks being treated as alpha-cutout cards, which could collapse glass, stained glass, and modded decorative faces into dark outlines or panels during LOD baking.
+- Normalized omitted Forge baked-quad vertex alpha and preserved two-sided baking for cutout cards such as vines, plants, and bars, preventing erased face alpha and missing back faces.
+
 ## 0.3.4（1.20.1 Forge 客户端版）— 2026-09-12
 
 ### 简体中文

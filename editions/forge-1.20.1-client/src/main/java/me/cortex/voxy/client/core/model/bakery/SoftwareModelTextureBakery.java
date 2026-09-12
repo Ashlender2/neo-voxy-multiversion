@@ -54,7 +54,10 @@ public class SoftwareModelTextureBakery {
     private static final Matrix4f[] VIEWS = new Matrix4f[6];
 
     private final ReuseVertexConsumer opaqueVC = new ReuseVertexConsumer();
-    private final ReuseVertexConsumer translucentVC = new ReuseVertexConsumer(1/*has discard*/);
+    // Translucent cube faces must keep normal culling/blending semantics. Marking
+    // every translucent quad as alpha-cutout makes front/back/edge layers fold
+    // into dark cards during the six-direction offline projection.
+    private final ReuseVertexConsumer translucentVC = new ReuseVertexConsumer();
     private final SoftwareRasterizer rasterizer = new SoftwareRasterizer(ModelFactory.MODEL_TEXTURE_SIZE);
 
 
