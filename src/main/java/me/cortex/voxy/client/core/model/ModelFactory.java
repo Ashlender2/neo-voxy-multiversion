@@ -709,6 +709,10 @@ public class ModelFactory {
             //TODO: add alot of config options for the following
             boolean occludesFace = true;
             occludesFace &= layer != RenderType.translucent();//If its translucent, it doesnt occlude
+            // Pure fluids use their own family-aware meshing path. A modded fluid may declare a
+            // solid/cutout render layer and have an opaque texture, but it still must not delete
+            // the terrain face behind it: sloped and partial-height surfaces can expose that face.
+            occludesFace &= !isFluid;
 
             //TODO: make this an option, basicly if the face is really close, it occludes otherwise it doesnt
             occludesFace &= offset < 0.1;//If the face is rendered far away from the other face, then it doesnt occlude
