@@ -36,6 +36,7 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
@@ -67,9 +68,9 @@ public class ModelFactory {
 
     //TODO: replace the fluid BlockState with a client model id integer of the fluidState, requires looking up
     // the fluid state in the mipper
-    private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int tintingColour, boolean framedBlocks) {
-        public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int tintingColour, boolean framedBlocks) {
-            this(textures[0], textures[1], textures[2], textures[3], textures[4], textures[5], fluidBlockStateId, tintingColour, framedBlocks);
+    private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks) {
+        public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks) {
+            this(textures[0], textures[1], textures[2], textures[3], textures[4], textures[5], fluidBlockStateId, fluidKind, tintingColour, framedBlocks);
         }
     }
 
@@ -108,7 +109,9 @@ public class ModelFactory {
     // this has an issue with scaffolding i believe tho, so maybe make it a probability to render??? idk
     private final long[] metadataCache;
     private final int[] fluidStateLUT;
-    private final byte[] vanillaFluidKinds;
+    private final int[] fluidKinds;
+    private final IdentityHashMap<Fluid, Integer> fluidKindByType = new IdentityHashMap<>();
+    private final List<Fluid> fluidKindRepresentatives = new ArrayList<>();
 
     //Provides a map from id -> model id as multiple ids might have the same internal model id
     private final int[] idMappings;
@@ -153,7 +156,7 @@ public class ModelFactory {
 
         this.metadataCache = new long[1<<16];
         this.fluidStateLUT = new int[1<<16];
-        this.vanillaFluidKinds = new byte[1<<16];
+        this.fluidKinds = new int[1<<16];
         this.idMappings = new int[1<<20];//Max of 1 million blockstates mapping to 65k model states
         Arrays.fill(this.idMappings, -1);
         Arrays.fill(this.fluidStateLUT, -1);
@@ -507,10 +510,7 @@ public class ModelFactory {
         //TODO: add thing for `blockState.hasEmissiveLighting()` and `blockState.getLuminance()`
 
         boolean isFluid = isFluidBlockState(blockState);
-        byte vanillaFluidKind = !isFluid ? 0
-                : blockState.getFluidState().is(FluidTags.WATER) ? (byte) 1
-                : blockState.getFluidState().is(FluidTags.LAVA) ? (byte) 2
-                : 0;
+        int fluidKind = isFluid ? this.getOrCreateFluidKind(blockState.getFluidState()) : 0;
         boolean leafModel = isLeafBlockState(blockState);
         boolean balancedLeaf = leafModel
                 && VoxyConfig.CONFIG.getLeafLodMode() == VoxyConfig.LeafLodMode.BALANCED;
@@ -546,14 +546,14 @@ public class ModelFactory {
 
         ModelEntry entry;
         {//Deduplicate same entries
-            entry = new ModelEntry(textureData, clientFluidStateId, isBiomeColourDependent||colourProvider==null?-1:captureColourConstant(colourProvider, colourState, DEFAULT_BIOME)|0xFF000000,
+            entry = new ModelEntry(textureData, clientFluidStateId, fluidKind, isBiomeColourDependent||colourProvider==null?-1:captureColourConstant(colourProvider, colourState, DEFAULT_BIOME)|0xFF000000,
                     me.cortex.voxy.commonImpl.compat.FramedBlocksCompat.isFramedState(blockState));
             int possibleDuplicate = this.modelTexture2id.getInt(entry);
             if (possibleDuplicate != -1) {//Duplicate found
                 this.idMappings[blockId] = possibleDuplicate;
                 modelId = possibleDuplicate;
-                if (vanillaFluidKind != 0) {
-                    this.vanillaFluidKinds[modelId] = vanillaFluidKind;
+                if (fluidKind != 0) {
+                    this.fluidKinds[modelId] = fluidKind;
                 }
                 //Remove from flight
                 this.blockStatesInFlightLock.lock();
@@ -576,7 +576,7 @@ public class ModelFactory {
 
         if (isFluid) {
             this.fluidStateLUT[modelId] = modelId;
-            this.vanillaFluidKinds[modelId] = vanillaFluidKind;
+            this.fluidKinds[modelId] = fluidKind;
         } else if (clientFluidStateId != -1) {
             this.fluidStateLUT[modelId] = clientFluidStateId;
         }
@@ -816,6 +816,7 @@ public class ModelFactory {
         // geometry clip. This avoids dropping the LOD canopy before vanilla cutout pixels exist.
         modelFlags |= leafModel ? 128 : 0;
         modelFlags |= fluidHeight << 8;
+        modelFlags |= isFluid ? 1 << 12 : 0;
         modelFlags |= entry.framedBlocks ? 1 << 13 : 0;
 
         //modelFlags |= blockRenderLayer == RenderLayer.getSolid()?0:1;// should discard alpha
@@ -1213,8 +1214,30 @@ public class ModelFactory {
         return map;
     }
 
-    public int getVanillaFluidKind(int clientId) {
-        return this.vanillaFluidKinds[clientId];
+    private synchronized int getOrCreateFluidKind(FluidState state) {
+        Fluid type = state.getType();
+        Integer cached = this.fluidKindByType.get(type);
+        if (cached != null) {
+            return cached;
+        }
+
+        for (int i = 0; i < this.fluidKindRepresentatives.size(); i++) {
+            Fluid representative = this.fluidKindRepresentatives.get(i);
+            if (type.isSame(representative) || representative.isSame(type)) {
+                int kind = i + 1;
+                this.fluidKindByType.put(type, kind);
+                return kind;
+            }
+        }
+
+        this.fluidKindRepresentatives.add(type);
+        int kind = this.fluidKindRepresentatives.size();
+        this.fluidKindByType.put(type, kind);
+        return kind;
+    }
+
+    public int getFluidKind(int clientId) {
+        return this.fluidKinds[clientId];
     }
 
     public final long getModelMetadataFromClientId(int clientId) {

@@ -585,7 +585,7 @@ public class RenderDataFactory {
 
     private int fluidKind(int voxelIndex) {
         if (!hasFluid(voxelIndex)) return 0;
-        return this.modelMan.getVanillaFluidKind(fluidModelId(voxelIndex));
+        return this.modelMan.getFluidKind(fluidModelId(voxelIndex));
     }
 
     private int rawFluidModelId(long raw) {
@@ -599,7 +599,7 @@ public class RenderDataFactory {
 
     private int rawFluidKind(long raw) {
         int modelId = rawFluidModelId(raw);
-        return modelId == 0 ? 0 : this.modelMan.getVanillaFluidKind(modelId);
+        return modelId == 0 ? 0 : this.modelMan.getFluidKind(modelId);
     }
 
     private long rawModelMetadata(long raw) {
@@ -1000,7 +1000,7 @@ public class RenderDataFactory {
                             A &= ~0b110L; A |= getQuadTyping(Am);
                         }
 
-                        if (axis == 0 && facingForward == 1 && this.modelMan.getVanillaFluidKind(
+                        if (axis == 0 && facingForward == 1 && this.modelMan.getFluidKind(
                                 (int) ((A >>> 26) & 0xFFFF)) != 0) {
                             this.blockMesher.skip(1);
                             continue;
@@ -1083,7 +1083,7 @@ public class RenderDataFactory {
                         }
 
                         if (((axis == 0 && side == 1) || axis == 1)
-                                && this.modelMan.getVanillaFluidKind((int) ((A >>> 26) & 0xFFFF)) != 0) {
+                                && this.modelMan.getFluidKind((int) ((A >>> 26) & 0xFFFF)) != 0) {
                             this.blockMesher.skip(1);
                             continue;
                         }
@@ -1740,7 +1740,7 @@ public class RenderDataFactory {
                         //Update quad typing info to be the fluid type
                         A &= ~0b110L; A |= getQuadTyping(Am);
                     }
-                    if (this.modelMan.getVanillaFluidKind((int) ((A >>> 26) & 0xFFFF)) != 0) {
+                    if (this.modelMan.getFluidKind((int) ((A >>> 26) & 0xFFFF)) != 0) {
                         oki = false;
                     }
 
@@ -1807,7 +1807,7 @@ public class RenderDataFactory {
                         A |= Integer.toUnsignedLong(fluidId)<<26;
                         Am = this.modelMan.getModelMetadataFromClientId(fluidId);
                     }
-                    if (this.modelMan.getVanillaFluidKind((int) ((A >>> 26) & 0xFFFF)) != 0) {
+                    if (this.modelMan.getFluidKind((int) ((A >>> 26) & 0xFFFF)) != 0) {
                         oki = false;
                     }
 

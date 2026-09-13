@@ -59,6 +59,10 @@ bool modelIsLeaf(BlockModel model) {
     return ((model.flagsA)&128u) != 0;
 }
 
+bool modelIsFluid(BlockModel model) {
+    return ((model.flagsA)&4096u) != 0;
+}
+
 bool modelIsFramedBlocks(BlockModel model) {
     return ((model.flagsA)&8192u) != 0;
 }

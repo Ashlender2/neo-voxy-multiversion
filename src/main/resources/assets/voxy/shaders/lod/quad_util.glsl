@@ -120,7 +120,7 @@ uvec3 makeRemainingAttributes(const in BlockModel model, const in Quad quad, uin
     // Bits 11..13 are outside the packed face and additive-light fields.
     attributes.z |= modelUsesFluidDatum(model) ? (1u << 11u) : 0u;
     attributes.z |= modelIsLeaf(model) ? (1u << 12u) : 0u;
-    attributes.z |= (modelUsesFluidDatum(model) || modelIsLava(model))
+    attributes.z |= modelIsFluid(model)
             ? (1u << 13u) : 0u;
 
     return attributes;
@@ -140,16 +140,12 @@ uint makeBalancedLeafSeed(const in Quad quad, ivec3 lodPos, uint lodLevel, uint 
     return hash & 0xFFFFu;
 }
 
-bool modelIsVanillaFluid(BlockModel model) {
-    return modelUsesFluidDatum(model) || modelIsLava(model);
-}
-
 float coarseFluidTopIndentation(BlockModel model, float lodScale) {
     return (1.0 - modelFluidHeight(model)) / lodScale;
 }
 
 float resolveFluidTopIndentation(BlockModel model, uint face, float bakedIndentation, float localY, float lodScale, ivec3 lodPos, uint lodLevel) {
-    if (face != 1u || !modelIsVanillaFluid(model)) return bakedIndentation;
+    if (face != 1u || !modelIsFluid(model)) return bakedIndentation;
 
     if (lodLevel > 0u && modelUsesFluidDatum(model)) {
         float coarseBottom = localY * lodScale + float((lodPos.y << lodLevel) << 5);
@@ -163,7 +159,7 @@ float resolveFluidTopIndentation(BlockModel model, uint face, float bakedIndenta
 }
 
 vec4 resolveFluidSideSize(BlockModel model, const in Quad rawQuad, uint face, vec4 faceSize, float lodScale, uint lodLevel, bool fluidShape) {
-    if (!modelIsVanillaFluid(model)) return faceSize;
+    if (!modelIsFluid(model)) return faceSize;
     if (fluidShape) return vec4(0.0, 1.0, 0.0, 1.0);
     const float fluidEpsilon = 0.00005f;
     float top = 1.0 - coarseFluidTopIndentation(model, lodScale);
@@ -213,7 +209,7 @@ void setupQuad(out QuadData quad, const in Quad rawQuad, uvec2 sPos, bool genera
     uint modelId = extractStateId(rawQuad);
     BlockModel model = modelData[modelId];
     uint faceData = model.faceData[face];
-    bool fluidShape = modelIsVanillaFluid(model) && face != 0u && quadHasFluidShape(rawQuad);
+    bool fluidShape = modelIsFluid(model) && face != 0u && quadHasFluidShape(rawQuad);
     ivec2 quadSize = fluidShape ? ivec2(1) : extractSize(rawQuad);
 
     if (generateAttributes) {

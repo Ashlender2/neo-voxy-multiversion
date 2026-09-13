@@ -1,6 +1,7 @@
 package me.cortex.voxy.common.world.other;
 
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Arrays;
 
@@ -37,9 +38,17 @@ public final class Mipper {
         int value = Math.clamp(mapper.getBlockStateOpacity(blockId), 0, 15);
         if (state.isAir()) value |= META_TERRAIN_AIR;
         if (!state.getFluidState().isEmpty()) value |= META_FLUID;
-        if (state.getBlock() instanceof LiquidBlock) value |= META_PURE_FLUID;
+        if (isPureFluid(state)) value |= META_PURE_FLUID;
         scratch.metadata[blockId] = (byte) value;
         return value;
+    }
+
+    private static boolean isPureFluid(BlockState state) {
+        if (state.getBlock() instanceof LiquidBlock) {
+            return true;
+        }
+        var fluidState = state.getFluidState();
+        return !fluidState.isEmpty() && fluidState.createLegacyBlock().getBlock() == state.getBlock();
     }
 
     private static long uniformBlock(long i000, long i100, long i001, long i101,
