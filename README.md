@@ -22,7 +22,7 @@ Neo Voxy 由 **JohnSnow** 维护，在 [NHblock714/voxy](https://github.com/NHbl
 
 | 版本 | 安装位置 | 渲染依赖 | Java | 发布文件 |
 |---|---|---|---:|---|
-| 1.21.1 NeoForge 联动版 | 客户端与服务端 | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.7-mc1.21.1-neoforge-integrations.jar` |
+| 1.21.1 NeoForge 联动版 | 客户端与服务端 | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.8-mc1.21.1-neoforge-integrations.jar` |
 | 1.21.1 NeoForge 纯客户端版 | 仅客户端 | Sodium 0.8 / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
 | 1.20.1 Forge 纯客户端版 | 仅客户端 | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | 26.1.2 NeoForge 纯客户端版 | 仅客户端 | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
@@ -49,8 +49,8 @@ Neo Voxy 由 **JohnSnow** 维护，在 [NHblock714/voxy](https://github.com/NHbl
 | Sodium / Iris | ✅ | ✅ | — | ✅ | 26.1.2 仅以 Sodium 0.9.1 为兼容目标，Iris 使用 1.11.2+ |
 | Embeddium / Oculus | — | — | ✅ | — | Embeddium 为渲染后端，Oculus 提供光影支持 |
 | Create | ✅ | — | — | — | 远景列车、轨道、动态结构与动力部件 |
-| Sable | ✅ | — | — | — | 远景物理结构及深度兼容 |
-| Ecliptic Seasons | ✅ | — | — | — | 远景季节积雪 |
+| Sable | ✅ | — | — | — | Sable 2.0.5 远景物理结构及深度兼容 |
+| Ecliptic Seasons | ✅ | — | — | — | 季节积雪、结冰水体、季节模型与颜色 |
 | Domum Ornamentum | ✅ | — | — | — | 完全兼容：精细独立模型、材质与持久缓存 |
 | FramedBlocks | ✅ | — | — | — | 主/副伪装、特殊形状数据与远景材质持久缓存 |
 | LittleTiles | 🧪 | — | — | — | 静态结构使用持久化的 1/8 格 LOD 网格，保留透明度、发光与光影材质采样 |

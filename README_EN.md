@@ -23,9 +23,9 @@ Neo Voxy is maintained by **JohnSnow**. It extends [NHblock714/voxy](https://git
 
 | Edition | Install side | Renderer | Java | Release file |
 |---|---|---|---:|---|
-| 1.21.1 NeoForge integrations | Client and server | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.7-mc1.21.1-neoforge-integrations.jar` |
+| 1.21.1 NeoForge integrations | Client and server | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.8-mc1.21.1-neoforge-integrations.jar` |
 | 1.21.1 NeoForge client | Client only | Sodium 0.8 / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
-| 1.20.1 Forge client | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.3-mc1.20.1-forge-client.jar` |
+| 1.20.1 Forge client | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | 26.1.2 NeoForge client | Client only | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
 
 Release JARs remove unused platform natives, duplicate module descriptors, and build intermediates. Runtime shaders, languages, models, and storage libraries are retained.
@@ -50,8 +50,8 @@ Release JARs remove unused platform natives, duplicate module descriptors, and b
 | Sodium / Iris | ✅ | ✅ | — | ✅ | 26.1.2 targets Sodium 0.9.1 only, with Iris 1.11.2+ |
 | Embeddium / Oculus | — | — | ✅ | — | Embeddium is the renderer; Oculus provides shader support |
 | Create | ✅ | — | — | — | Distant trains, tracks, contraptions, and kinetic components |
-| Sable | ✅ | — | — | — | Distant physics objects and depth integration |
-| Ecliptic Seasons | ✅ | — | — | — | Seasonal snow in distant terrain |
+| Sable | ✅ | — | — | — | Sable 2.0.5 distant physics objects and depth integration |
+| Ecliptic Seasons | ✅ | — | — | — | Seasonal snow, frozen water, seasonal models, and colours |
 | Domum Ornamentum | ✅ | — | — | — | Full support: detailed dedicated models, materials, and persistent cache |
 | FramedBlocks | ✅ | — | — | — | Primary/secondary camos, special shape data, and persistent distant materials |
 | LittleTiles | 🧪 | — | — | — | Persistent 1/8-block static LOD meshes retaining alpha, emission, and shader material sampling |

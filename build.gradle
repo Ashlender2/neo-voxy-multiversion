@@ -281,12 +281,12 @@ tasks.register("extractCreateCompileJars", Sync) {
 }
 
 // Sable likewise ships its companion API and generated Rapier implementation as nested jars.
-def sableVersion = "2.0.3+mc1.21.1"
+def sableVersion = "2.0.5+mc1.21.1"
 def sableCompanionNestedJar = "META-INF/jarjar/sable-companion-common-1.21.1-1.6.0.jar"
-def sableRapierNestedJar = "META-INF/jarjar/dev.ryanhcode.sable.sable-sable_rapier-1.21.1-2.0.3.jar"
+def sableRapierNestedJar = "META-INF/jarjar/dev.ryanhcode.sable.sable-sable_rapier-1.21.1-2.0.5.jar"
 def sableCompileDir = layout.buildDirectory.dir("generated/compile-deps/sable")
 def sableCompanionCompileJar = sableCompileDir.map { it.file("sable-companion-common-1.21.1-1.6.0.jar") }
-def sableRapierCompileJar = sableCompileDir.map { it.file("dev.ryanhcode.sable.sable-sable_rapier-1.21.1-2.0.3.jar") }
+def sableRapierCompileJar = sableCompileDir.map { it.file("dev.ryanhcode.sable.sable-sable_rapier-1.21.1-2.0.5.jar") }
 
 tasks.register("extractSableCompileJars", Sync) {
     from({

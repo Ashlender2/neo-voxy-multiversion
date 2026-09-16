@@ -1,5 +1,19 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.4.8（1.21.1 NeoForge 联动版）— 2026-09-16
+
+### 简体中文
+
+- 将 Sable 兼容与构建基线更新至 2.0.5。
+- 完善 Ecliptic Seasons 0.15.0-rc+ 联动，支持远景季节积雪、结冰水体、季节模型与颜色。
+- 阻止同时加载不兼容的 Ecliptic Seasons: Voxy Compact。
+
+### English
+
+- Updated the Sable compatibility and build baseline to 2.0.5.
+- Expanded Ecliptic Seasons 0.15.0-rc+ integration with distant seasonal snow, frozen water, seasonal models, and colours.
+- Blocked the incompatible Ecliptic Seasons: Voxy Compact mod.
+
 ## 0.3.5（1.20.1 Forge 客户端版）— 2026-09-12
 
 ### 简体中文
