@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.cortex.voxy.client.core.model.ModelFactory;
 import me.cortex.voxy.common.util.UnsafeUtil;
 import me.cortex.voxy.common.world.other.Mapper;
+import me.cortex.voxy.common.world.other.SeasonalIdSpace;
 import me.cortex.voxy.commonImpl.compat.DomumOrnamentumCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -166,60 +167,109 @@ public class SoftwareModelTextureBakery {
         this.opaqueVC.setFallbackTintColour(plan.fallbackTintAbgr()).setForcedTintColour(forcedTint);
         this.translucentVC.setFallbackTintColour(plan.fallbackTintAbgr()).setForcedTintColour(forcedTint);
 
+        BakedModel[] bakeModels = { model };
+        var seasonalView = me.cortex.voxy.client.core.compat.eclipticseasons.SeasonalLod.view;
+        if (this.seasonalModelId != null && seasonalView != null) {
+            var seasonal = seasonalView.resolveSeasonalModel(modelState, this.seasonalModelId);
+            if (seasonal != null) {
+                //replace() swaps the whole model; otherwise the seasonal parts stack on top of the
+                //original ones (the blockstate itself is untouched either way - opacity, culling
+                //and tint stay the original block's)
+                bakeModels = seasonal.replace()
+                        ? new BakedModel[]{ seasonal.model() }
+                        : new BakedModel[]{ model, seasonal.model() };
+            }
+        }
+
         boolean crossCandidate = true;
         int diagonalFamilies = 0;
         int unculledQuads = 0;
 
-        List<RenderType> layers = List.of(layer);
-        if (plan.independentModel()) {
-            try {
-                var declaredLayers = model.getRenderTypes(
-                        modelState, new SingleThreadedRandomSource(42L), modelData).asList();
-                if (!declaredLayers.isEmpty()) {
-                    layers = declaredLayers;
+        for (BakedModel bakeModel : bakeModels) {
+            List<RenderType> layers = List.of(layer);
+            if (plan.independentModel()) {
+                try {
+                    var declaredLayers = bakeModel.getRenderTypes(
+                            modelState, new SingleThreadedRandomSource(42L), modelData).asList();
+                    if (!declaredLayers.isEmpty()) {
+                        layers = declaredLayers;
+                    }
+                } catch (Throwable ignored) {
+                    // Keep the block state's normal layer when optional model data is malformed.
                 }
-            } catch (Throwable ignored) {
-                // Keep the block state's normal layer when optional model data is malformed.
+            }
+
+            var random = new SingleThreadedRandomSource(42L);
+            for (RenderType renderLayer : layers) {
+                // Copycat wrapper models gate per-layer queries on the material model's declared
+                // render types. A null query asks the wrapper for all geometry.
+                RenderType quadQueryLayer =
+                        me.cortex.voxy.commonImpl.compat.CreateCopycatCompat.isCopycatState(state)
+                                ? null : resolveQueryLayer(
+                                        bakeModel, modelState, modelData, renderLayer);
+
+                for (Direction direction : new Direction[] { Direction.DOWN, Direction.UP,
+                        Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null }) {
+                    random.setSeed(42L);
+                    var quads = bakeModel.getQuads(
+                            modelState, direction, random, modelData, quadQueryLayer);
+
+                    if (direction != null && !quads.isEmpty()) {
+                        crossCandidate = false;
+                    }
+
+                    for (var quad : quads) {
+                        if (direction == null && crossCandidate) {
+                            int family = classifyGroundCrossQuad(quad.getVertices());
+                            if (family == 0) {
+                                crossCandidate = false;
+                            } else {
+                                diagonalFamilies |= family;
+                                unculledQuads++;
+                            }
+                        }
+
+                        (renderLayer == RenderType.translucent() ? this.translucentVC : this.opaqueVC)
+                                .quad(quad, forceSolidLeaves, renderLayer, modelState, domumModel);
+                    }
+                }
             }
         }
 
-        var random = new SingleThreadedRandomSource(42L);
-        for (RenderType renderLayer : layers) {
-            // Copycat wrapper models gate per-layer queries on the material model's declared
-            // render types. A null query asks the wrapper for all geometry.
-            RenderType quadQueryLayer =
-                    me.cortex.voxy.commonImpl.compat.CreateCopycatCompat.isCopycatState(state)
-                            ? null : resolveQueryLayer(
-                                    model, modelState, modelData, renderLayer);
-
-            for (Direction direction : new Direction[] { Direction.DOWN, Direction.UP,
-                    Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null }) {
-                random.setSeed(42L);
-                var quads = model.getQuads(
-                        modelState, direction, random, modelData, quadQueryLayer);
-
-                if (direction != null && !quads.isEmpty()) {
-                    crossCandidate = false;
-                }
-
-                for (var quad : quads) {
-                    if (direction == null && crossCandidate) {
-                        int family = classifyGroundCrossQuad(quad.getVertices());
-                        if (family == 0) {
-                            crossCandidate = false;
-                        } else {
-                            diagonalFamilies |= family;
-                            unculledQuads++;
-                        }
-                    }
-
-                    (renderLayer == RenderType.translucent() ? this.translucentVC : this.opaqueVC)
-                            .quad(quad, forceSolidLeaves, renderLayer, modelState, domumModel);
-                }
-            }
+        if (this.renderSnowOverlay && seasonalView != null) {
+            seasonalView.renderSnowOverlay(state, layer, this.translucentVC, this.opaqueVC);
         }
 
         return crossCandidate && unculledQuads >= 2 && diagonalFamilies == 0b11;
+    }
+
+    private boolean renderSnowOverlay;
+    private net.minecraft.resources.ResourceLocation seasonalModelId;
+
+    //Derives the bake decorations from a render-only id. Only ever arms them while the seasonal
+    //view is installed: without the mod, a legacy complement id still resolves and bakes as its
+    //plain original state.
+    public void beginRenderOnlyBake(int blockId) {
+        this.renderSnowOverlay = false;
+        this.seasonalModelId = null;
+        if (me.cortex.voxy.client.core.compat.eclipticseasons.SeasonalLod.view == null
+                || blockId < this.mapper.getBlockStateCount()
+                || blockId == SeasonalIdSpace.VIRTUAL_ICE_ID) {
+            return;
+        }
+        var seasonal = SeasonalIdSpace.get(blockId);
+        if (seasonal != null) {
+            this.seasonalModelId = seasonal.modelId();
+            this.renderSnowOverlay = seasonal.snowy();
+            return;
+        }
+        int complement = SeasonalIdSpace.MAX_BLOCK_ID - blockId;
+        this.renderSnowOverlay = complement >= 0 && complement < this.mapper.getBlockStateCount();
+    }
+
+    public void endRenderOnlyBake() {
+        this.renderSnowOverlay = false;
+        this.seasonalModelId = null;
     }
 
     private static int classifyGroundCrossQuad(int[] vertices) {

@@ -338,8 +338,8 @@ dependencies {
     compileOnly files(sableCompanionCompileJar, sableRapierCompileJar)
             .builtBy(tasks.named("extractSableCompileJars"))
 
-    // EclipticSeasons (compileOnly): native snow-LOD compat, gated at runtime on "eclipticseasons".
-    compileOnly("maven.modrinth:ecliptic-seasons:0.13.8.4.1") { transitive = false }
+    // EclipticSeasons (compileOnly): mesh-time seasonal LOD, gated at runtime on 0.15.0-rc+.
+    compileOnly("maven.modrinth:ecliptic-seasons:0.15.0-rc-3-1") { transitive = false }
 
     // bits_n_bobs + its azimuth framework, for the cogwheel-chain LOD snapshot (optional at runtime)
     compileOnly("maven.modrinth:create-bits-n-bobs:2.1.11-beta") { transitive = false }
