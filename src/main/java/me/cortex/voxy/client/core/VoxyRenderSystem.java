@@ -213,8 +213,13 @@ public class VoxyRenderSystem {
             cameraY += (16+(256-32-sector*30))*16;
         }
 
-        //cameraY += 100;
-        var voxyProjection = computeProjectionMat(this.properties, vanillaProjection);
+        // Packs that opt in can match the projection far plane to Voxy's configured section cube.
+        // The diagonal keeps every corner inside the frustum; two chunks cover traversal padding.
+        float farPlane = 16.0f * 3000.0f;
+        if (this.pipeline.useDynamicFarPlane()) {
+            farPlane = (float) ((VoxyConfig.CONFIG.createLodRadius() + 32.0) * Math.sqrt(3.0));
+        }
+        var voxyProjection = computeProjectionMat(this.properties, vanillaProjection, farPlane);
 
         glGetIntegerv(GL_VIEWPORT, this.viewportDimensions);
 
@@ -575,7 +580,7 @@ public class VoxyRenderSystem {
         return Minecraft.getInstance().options.getEffectiveRenderDistance() * 16;
     }
 
-    private Matrix4f computeProjectionMat(RenderProperties properties, Matrix4fc base) {
+    private Matrix4f computeProjectionMat(RenderProperties properties, Matrix4fc base, float farPlane) {
 
         // Preserve projection changes applied by Minecraft, such as view bobbing.
         var rawMCProj = RenderSystem.getProjectionMatrix();
@@ -584,7 +589,7 @@ public class VoxyRenderSystem {
         float near = getRenderDistance() <= 32.0f ? 8.0f : 16.0f;
         near = VoxyClient.disableSodiumChunkRender() ? 0.1f : near;
 
-        float far = 16 * 3000;
+        float far = farPlane;
 
         // Reverse-Z swaps the near and far mapping.
         if (properties.isReverseZ()) {

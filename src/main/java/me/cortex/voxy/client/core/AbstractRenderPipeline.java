@@ -365,6 +365,10 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         return null;
     }
 
+    public boolean useDynamicFarPlane() {
+        return false;
+    }
+
     //Depth texture LOD geometry renders into, for sable contraption depth-occlusion compositing.
     //Default none; only the Iris pipeline provides one.
     public int getSableOcclusionDepthTexture() {

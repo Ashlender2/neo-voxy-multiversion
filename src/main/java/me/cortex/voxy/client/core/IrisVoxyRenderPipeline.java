@@ -313,6 +313,11 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
         return this.data.resolutionScale;
     }
 
+    @Override
+    public boolean useDynamicFarPlane() {
+        return this.data.useDynamicFarPlane;
+    }
+
 
     @Override
     protected boolean useBoundaryGuardPass() {
