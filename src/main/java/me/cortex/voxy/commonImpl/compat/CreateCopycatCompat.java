@@ -48,9 +48,6 @@ public final class CreateCopycatCompat {
             return material != null ? material : this.parts.values().stream().findFirst().orElse(null);
         }
 
-        boolean hasCustomMaterial() {
-            return this.parts.values().stream().anyMatch(CreateCopycatCompat::isCustomMaterial);
-        }
     }
 
     private record MaterialKey(CompoundTag data, String key) {}
@@ -189,16 +186,19 @@ public final class CreateCopycatCompat {
                 }
 
                 try {
-                    MaterialSet materials = extractMaterials(blockEntity);
-                    if (materials == null || !materials.hasCustomMaterial()) {
-                        continue;
-                    }
-
                     int lx = pos.getX() & 15;
                     int ly = pos.getY() & 15;
                     int lz = pos.getZ() & 15;
                     BlockState state = section.getBlockState(lx, ly, lz);
                     if (state == null || state.isAir()) {
+                        continue;
+                    }
+
+                    MaterialSet materials = extractMaterials(blockEntity);
+                    if (materials == null) {
+                        materials = baseMaterialsFor(state);
+                    }
+                    if (materials == null) {
                         continue;
                     }
 
@@ -265,7 +265,7 @@ public final class CreateCopycatCompat {
         }
         try {
             MaterialSet materials = readMaterials(data);
-            if (materials != null && materials.hasCustomMaterial()) {
+            if (materials != null) {
                 materialsFor(mapper).putIfAbsent(blockId, materials);
             }
         } catch (Throwable ignored) {
@@ -507,11 +507,6 @@ public final class CreateCopycatCompat {
             if (!state.isAir()) parts.put(name, state);
         }
         return parts.isEmpty() ? null : new MaterialSet(parts);
-    }
-
-    private static boolean isCustomMaterial(BlockState material) {
-        var id = BuiltInRegistries.BLOCK.getKey(material.getBlock());
-        return id != null && !id.getPath().equals("copycat_base");
     }
 
     @SuppressWarnings("unchecked")

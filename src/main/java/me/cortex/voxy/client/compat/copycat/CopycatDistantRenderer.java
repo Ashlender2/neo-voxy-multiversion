@@ -277,6 +277,11 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
                 int wx = sx * 16 + x, wy = sy * 16 + y, wz = sz * 16 + z;
                 BlockPos worldPos = new BlockPos(wx, wy, wz);
                 var model = blockRenderer.getBlockModel(state);
+                var modelData = plan.modelData();
+                try {
+                    modelData = model.getModelData(level, worldPos, state, modelData);
+                } catch (Throwable ignored) {
+                }
                 int light = DistantLightSampler.sample(level, wx, wy, wz);
                 java.util.function.ToIntFunction<net.minecraft.client.renderer.block.model.BakedQuad> tint = quad -> {
                     BlockState material = CreateCopycatCompat.materialForQuad(mapper, blockId, quad);
@@ -287,13 +292,13 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
                 for (RenderType layer : new RenderType[]{RenderType.solid(), RenderType.cutout(), RenderType.cutoutMipped()}) {
                     opaque.blockModelLayer(state, model, x, y, z,
                             DistantLightSampler.sky(light), DistantLightSampler.block(light),
-                            layer, tint, plan.modelData(),
+                            layer, tint, modelData,
                             direction -> me.cortex.voxy.client.compat.create.DistantFaceCulling
                                     .hidesSectionFace(fullBlocks, local, direction));
                 }
                 translucent.blockModelLayer(state, model, x, y, z,
                         DistantLightSampler.sky(light), DistantLightSampler.block(light),
-                        RenderType.translucent(), tint, plan.modelData(),
+                        RenderType.translucent(), tint, modelData,
                         direction -> me.cortex.voxy.client.compat.create.DistantFaceCulling
                                 .hidesSectionFace(fullBlocks, local, direction));
             }
