@@ -46,6 +46,7 @@ public class VoxyConfig {
     public boolean ingestEnabled = true;
     public float sectionRenderDistance = 16;
     public boolean sableLodRendering = true;
+    public int aeronauticsContraptionMaxChunks = 0;
     public boolean distantTrains = true;
     public boolean distantTracks = true;
     public boolean distantContraptions = true;
@@ -78,7 +79,6 @@ public class VoxyConfig {
     public int biomeBlendRadius = 2;
     // "water" blends pure fluids; "water_grass" also blends grass and foliage.
     public String biomeBlendScope = "water";
-    public int simulatedContraptionRenderDistancePercent = 100;
     public int serviceThreads = (int) Math.max(CpuLayout.getCoreCount()/1.5, 1);
     public float subDivisionSize = 123;
     public int skyFogDistance = 96;
@@ -211,6 +211,7 @@ public class VoxyConfig {
         this.lodBoundaryInset = Math.clamp(this.lodBoundaryInset, 8, 32);
         this.setLeafLodMode(this.getLeafLodMode());
         this.farPlayerAnimationDistance = Math.clamp(this.farPlayerAnimationDistance, 0, 32768);
+        this.aeronauticsContraptionMaxChunks = Math.clamp(this.aeronauticsContraptionMaxChunks, 0, 192);
         this.biomeBlendRadius = Math.clamp(this.biomeBlendRadius, 0, 7);
         if (!"water".equals(this.biomeBlendScope) && !"water_grass".equals(this.biomeBlendScope)) {
             this.biomeBlendScope = "water";
@@ -262,7 +263,7 @@ public class VoxyConfig {
         SableContraptionRenderDistance.updateClientConfig(
                 this.isRenderingEnabled() && this.sableLodRendering,
                 this.sectionRenderDistance,
-                this.simulatedContraptionRenderDistancePercent
+                this.aeronauticsContraptionMaxChunks
         );
     }
 

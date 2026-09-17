@@ -400,10 +400,10 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                 new IntOption(
                                         "voxy:sable_lod_distance",
                                         Component.translatable("voxy.config.compat.sableLodDistance"),
-                                        ()->CFG.simulatedContraptionRenderDistancePercent,
-                                        v->CFG.simulatedContraptionRenderDistancePercent=v,
-                                        new Range(0, 100, 5))
-                                        .setFormatter(v->Component.literal(v+"%"))
+                                        ()->CFG.aeronauticsContraptionMaxChunks,
+                                        v->CFG.aeronauticsContraptionMaxChunks=v,
+                                        new Range(0, 192, 8))
+                                        .setFormatter(VoxyConfigMenu::formatCreateDistance)
                                         .setImpact(OptionImpact.MEDIUM)
                                         .setEnablerInherit(s->sableInstalled),
                                 new BoolOption(

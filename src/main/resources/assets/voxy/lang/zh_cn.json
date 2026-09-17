@@ -89,7 +89,7 @@
   "voxy.config.compat.sableLod": "远景载具渲染",
   "voxy.config.compat.sableLod.tooltip": "让模拟载具（船只、载具等）在原版视距外继续渲染，延伸到 LOD 距离",
   "voxy.config.compat.sableLodDistance": "载具渲染距离",
-  "voxy.config.compat.sableLodDistance.tooltip": "远景载具保持渲染的距离，按 voxy 渲染距离的百分比计算。0% 等同关闭延伸",
+  "voxy.config.compat.sableLodDistance.tooltip": "远景载具的最大渲染距离（区块）。跟随 LOD 表示使用 Voxy 的 LOD 半径。",
   "voxy.config.compat.distantTrains": "远景火车",
   "voxy.config.compat.distantTrains.tooltip": "在实体范围外继续渲染机械动力的行驶火车（含转向架轮组），延伸到 LOD 距离。需要服务端也安装 voxy",
   "voxy.config.compat.distantTracks": "远景轨道",

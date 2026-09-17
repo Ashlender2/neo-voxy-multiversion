@@ -89,7 +89,7 @@
   "voxy.config.compat.sableLod": "Distant contraption rendering",
   "voxy.config.compat.sableLod.tooltip": "Keep simulated contraptions (ships, vehicles) rendered out to LOD distances instead of only within vanilla render distance",
   "voxy.config.compat.sableLodDistance": "Contraption render distance",
-  "voxy.config.compat.sableLodDistance.tooltip": "How far distant contraptions stay rendered, as a percentage of voxy's render distance. 0% disables the extension",
+  "voxy.config.compat.sableLodDistance.tooltip": "Maximum distant contraption render distance in chunks. Follow LOD uses Voxy's LOD radius.",
   "voxy.config.compat.distantTrains": "Distant trains",
   "voxy.config.compat.distantTrains.tooltip": "Keep Create trains (including bogey wheels) rendered beyond entity range, out to LOD distances. Requires voxy on the server",
   "voxy.config.compat.distantTracks": "Distant tracks",
