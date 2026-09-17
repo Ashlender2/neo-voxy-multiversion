@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import me.cortex.voxy.common.config.section.SectionStorage;
@@ -55,6 +56,12 @@ public final class CreateCopycatCompat {
     private record MaterialKey(CompoundTag data, String key) {}
 
     private static final Predicate<BlockState> COPYCAT_STATE_PREDICATE = CreateCopycatCompat::isCopycatState;
+    private static final ClassValue<Boolean> COPYCATS_PLUS_MODELS = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            return type.getName().startsWith(ADDON_PREFIX + ".");
+        }
+    };
 
     private static final ClassValue<Optional<Method>> GET_MATERIAL_METHODS = new ClassValue<>() {
         @Override
@@ -83,6 +90,17 @@ public final class CreateCopycatCompat {
         protected Optional<Method> computeValue(Class<?> type) {
             try {
                 return Optional.of(type.getMethod("getMaterialMap"));
+            } catch (ReflectiveOperationException ignored) {
+                return Optional.empty();
+            }
+        }
+    };
+
+    private static final ClassValue<Optional<Method>> GET_STORAGE_PROPERTIES_METHODS = new ClassValue<>() {
+        @Override
+        protected Optional<Method> computeValue(Class<?> type) {
+            try {
+                return Optional.of(type.getMethod("storageProperties"));
             } catch (ReflectiveOperationException ignored) {
                 return Optional.empty();
             }
@@ -125,6 +143,10 @@ public final class CreateCopycatCompat {
 
     public static boolean isCopycatState(BlockState state) {
         return CopycatCommon.isCopycatState(state);
+    }
+
+    public static boolean isCopycatsPlusModel(BakedModel model) {
+        return LOADED && model != null && COPYCATS_PLUS_MODELS.get(model.getClass());
     }
 
     public static void beginSection(Mapper mapper, SectionStorage storage, LevelChunk chunk, LevelChunkSection section, int sectionX, int sectionY, int sectionZ) {
@@ -278,8 +300,7 @@ public final class CreateCopycatCompat {
     public static DomumOrnamentumCompat.BakePlan getBakePlan(Mapper mapper, int blockId, BlockState state) {
         MaterialSet materials = materialSetFor(mapper, blockId);
         if (materials == null) {
-            BlockState material = baseMaterialFor(state);
-            if (material != null) materials = new MaterialSet(Map.of("material", material));
+            materials = baseMaterialsFor(state);
         }
         if (materials == null) {
             return DomumOrnamentumCompat.BakePlan.empty();
@@ -344,9 +365,24 @@ public final class CreateCopycatCompat {
         return base.isAir() ? null : base;
     }
 
-    //Contraption/carriage mesh path: contraptions capture their block entities as nbt, so the
-    //material comes from the copycat block entity's serialized "Material" tag (both mods use the
-    //same key). Unfilled or unreadable falls back to the base skeleton. Null for non-copycats.
+    private static MaterialSet baseMaterialsFor(BlockState state) {
+        BlockState base = baseMaterialFor(state);
+        if (base == null) return null;
+        try {
+            Method method = GET_STORAGE_PROPERTIES_METHODS.get(state.getBlock().getClass()).orElse(null);
+            if (method != null && method.invoke(state.getBlock()) instanceof Iterable<?> properties) {
+                TreeMap<String, BlockState> parts = new TreeMap<>();
+                for (Object property : properties) {
+                    if (property instanceof String name) parts.put(name, base);
+                }
+                if (!parts.isEmpty()) return new MaterialSet(parts);
+            }
+        } catch (Throwable ignored) {
+        }
+        return new MaterialSet(Map.of("material", base));
+    }
+
+    //Restores simple or multi-part materials from captured block entity NBT.
     public static ModelData materialFromContraptionNbt(BlockState state, CompoundTag beNbt) {
         if (!isCopycatState(state)) {
             return null;
@@ -364,8 +400,7 @@ public final class CreateCopycatCompat {
         } catch (Throwable ignored) {
         }
         if (materials == null) {
-            BlockState material = baseMaterialFor(state);
-            if (material != null) materials = new MaterialSet(Map.of("material", material));
+            materials = baseMaterialsFor(state);
         }
         if (materials == null) {
             return null;

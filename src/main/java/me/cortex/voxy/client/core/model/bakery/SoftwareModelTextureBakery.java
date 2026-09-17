@@ -203,13 +203,11 @@ public class SoftwareModelTextureBakery {
             }
 
             var random = new SingleThreadedRandomSource(42L);
+            boolean copycatState = me.cortex.voxy.commonImpl.compat.CreateCopycatCompat.isCopycatState(state);
+            boolean copycatsPlusModel = me.cortex.voxy.commonImpl.compat.CreateCopycatCompat.isCopycatsPlusModel(bakeModel);
             for (RenderType renderLayer : layers) {
-                // Copycat wrapper models gate per-layer queries on the material model's declared
-                // render types. A null query asks the wrapper for all geometry.
-                RenderType quadQueryLayer =
-                        me.cortex.voxy.commonImpl.compat.CreateCopycatCompat.isCopycatState(state)
-                                ? null : resolveQueryLayer(
-                                        bakeModel, modelState, modelData, renderLayer);
+                RenderType quadQueryLayer = copycatState && !copycatsPlusModel
+                        ? null : resolveQueryLayer(bakeModel, modelState, modelData, renderLayer);
 
                 for (Direction direction : new Direction[] { Direction.DOWN, Direction.UP,
                         Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null }) {

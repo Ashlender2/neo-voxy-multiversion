@@ -505,11 +505,10 @@ public final class DistantContraptionManager {
         liveRails.add(new double[]{axis.ordinal(), u, v});
     }
 
-    //Everything a bake consumes, kept together because both halves come out of the same walk over the
-    //contraption and both are needed to reproduce it - the copycat model data is read from block entity
-    //nbt that goes away with the entity.
+    //ModelData serves the live bake; renderNbt preserves copycat materials across reloads.
     public record Source(List<ShapeBlock> blocks,
-                         Map<BlockPos, net.neoforged.neoforge.client.model.data.ModelData> modelData) {
+                         Map<BlockPos, net.neoforged.neoforge.client.model.data.ModelData> modelData,
+                         Map<BlockPos, net.minecraft.nbt.CompoundTag> renderNbt) {
         public int blockCount() {
             return this.blocks.size();
         }
@@ -572,6 +571,7 @@ public final class DistantContraptionManager {
     private static Source collectBlocks(Contraption contraption) {
         List<ShapeBlock> blocks = new ArrayList<>();
         Map<BlockPos, net.neoforged.neoforge.client.model.data.ModelData> blockEntityData = null;
+        Map<BlockPos, net.minecraft.nbt.CompoundTag> renderNbt = null;
         for (var entry : contraption.getBlocks().entrySet()) {
             BlockPos pos = entry.getKey();
             var state = entry.getValue().state();
@@ -583,16 +583,22 @@ public final class DistantContraptionManager {
             }
             blocks.add(new ShapeBlock((byte) pos.getX(), (byte) pos.getY(), (byte) pos.getZ(), state));
             //Copycat looks live in the captured block entity nbt, not the state
+            var copycatNbt = me.cortex.voxy.commonImpl.compat.CopycatCommon
+                    .renderNbt(state, entry.getValue().nbt());
             var copycatData = me.cortex.voxy.commonImpl.compat.CreateCopycatCompat
-                    .materialFromContraptionNbt(state, entry.getValue().nbt());
+                    .materialFromContraptionNbt(state, copycatNbt);
             if (copycatData != null) {
                 if (blockEntityData == null) {
                     blockEntityData = new HashMap<>();
                 }
                 blockEntityData.put(pos, copycatData);
             }
+            if (copycatNbt != null) {
+                if (renderNbt == null) renderNbt = new HashMap<>();
+                renderNbt.put(pos, copycatNbt);
+            }
         }
-        return new Source(blocks, blockEntityData);
+        return new Source(blocks, blockEntityData, renderNbt);
     }
 
     private static CarriageMeshBaker.BakedCarriage bakeBlocks(Source source) {

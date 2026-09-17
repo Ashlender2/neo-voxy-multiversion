@@ -23,7 +23,7 @@ Neo Voxy is maintained by **JohnSnow**. It extends [NHblock714/voxy](https://git
 
 | Edition | Install side | Renderer | Java | Release file |
 |---|---|---|---:|---|
-| 1.21.1 NeoForge integrations | Client and server | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.9-mc1.21.1-neoforge-integrations.jar` |
+| 1.21.1 NeoForge integrations | Client and server | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.10-mc1.21.1-neoforge-integrations.jar` |
 | 1.21.1 NeoForge client | Client only | Sodium 0.8 / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
 | 1.20.1 Forge client | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | 26.1.2 NeoForge client | Client only | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
