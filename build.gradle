@@ -343,6 +343,31 @@ java {
     //withSourcesJar()
 }
 
+sourceSets {
+    verification {
+        java.srcDir 'src/verification/java'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    verificationImplementation.extendsFrom implementation
+    verificationRuntimeOnly.extendsFrom runtimeOnly
+}
+
+tasks.register('verifyWorldSectionPositions', JavaExec) {
+    group = 'verification'
+    description = 'Verifies legacy and extended world-section position encoding'
+    dependsOn tasks.named('verificationClasses')
+    classpath = sourceSets.verification.runtimeClasspath
+    mainClass = 'me.cortex.voxy.common.world.WorldSectionPositionVerification'
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyWorldSectionPositions')
+}
+
 jar {
     // The full nested-dependency archive is only an input to slimJar. Keep it out of build/libs so
     // users and CI cannot accidentally publish the ~90 MiB intermediate.

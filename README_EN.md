@@ -17,7 +17,7 @@ Neo Voxy is maintained by **JohnSnow**. It continues [NHblock714/voxy](https://g
 
 | Edition | Install side | Renderer dependency | Java | Release file |
 |---|---|---|---:|---|
-| Minecraft 1.21.1 · NeoForge integrations | Client and server | Sodium 0.8.x / Iris 1.8.12+ | 21 | `neo-voxy-0.4.11-mc1.21.1-neoforge-integrations.jar` |
+| Minecraft 1.21.1 · NeoForge integrations | Client and server | Sodium 0.8.x / Iris 1.8.12+ | 21 | `neo-voxy-0.4.12-mc1.21.1-neoforge-integrations.jar` |
 | Minecraft 1.21.1 · NeoForge client | Client only | Sodium 0.8.x / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
 | Minecraft 1.20.1 · Forge client | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | Minecraft 26.1.2 · NeoForge client | Client only | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
@@ -38,6 +38,7 @@ Neo Voxy is maintained by **JohnSnow**. It continues [NHblock714/voxy](https://g
 | LOD build-pressure control | ✅ | ✅ | ✅ | ✅ | Balances frame rate and build speed |
 | World curvature | ✅ | ✅ | ✅ | ✅ | Curves distant terrain in the GPU vertex stage |
 | Distant beacon beams | ✅ | — | — | — | Displays beacon beams at long range |
+| Extended-height world coordinates | ✅ | — | — | — | Supports LODs outside the vanilla height range |
 
 `✅` means supported, `❌` means unavailable, and `—` means not applicable. When a shader pack provides its own LOD transition, disable either its transition or Neo Voxy's circular handoff.
 

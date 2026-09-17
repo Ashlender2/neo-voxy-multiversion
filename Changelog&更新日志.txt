@@ -1,5 +1,15 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.4.12（1.21.1 NeoForge 联动版）— 2026-09-17
+
+### 简体中文
+
+- 扩展 LOD 区段坐标高度并保留普通世界旧缓存键，修复 Tellus 扩展高度世界中的坐标溢出崩溃。
+
+### English
+
+- Extended the LOD section-coordinate height range while preserving existing ordinary-world cache keys, fixing coordinate-overflow crashes in extended-height Tellus worlds.
+
 ## 0.4.11（1.21.1 NeoForge 联动版）— 2026-09-17
 
 ### 简体中文

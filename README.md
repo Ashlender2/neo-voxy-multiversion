@@ -17,7 +17,7 @@ Neo Voxy 由 **JohnSnow** 维护，基于 [NHblock714/voxy](https://github.com/N
 
 | 版本 | 安装位置 | 渲染前置 | Java | 发布文件 |
 |---|---|---|---:|---|
-| Minecraft 1.21.1 · NeoForge 联动版 | 客户端与服务端 | Sodium 0.8.x / Iris 1.8.12+ | 21 | `neo-voxy-0.4.11-mc1.21.1-neoforge-integrations.jar` |
+| Minecraft 1.21.1 · NeoForge 联动版 | 客户端与服务端 | Sodium 0.8.x / Iris 1.8.12+ | 21 | `neo-voxy-0.4.12-mc1.21.1-neoforge-integrations.jar` |
 | Minecraft 1.21.1 · NeoForge 纯客户端版 | 仅客户端 | Sodium 0.8.x / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
 | Minecraft 1.20.1 · Forge 纯客户端版 | 仅客户端 | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | Minecraft 26.1.2 · NeoForge 纯客户端版 | 仅客户端 | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
@@ -38,6 +38,7 @@ Neo Voxy 由 **JohnSnow** 维护，基于 [NHblock714/voxy](https://github.com/N
 | LOD 构建压力控制 | ✅ | ✅ | ✅ | ✅ | 调整帧率与构建速度的优先级 |
 | 世界曲率 | ✅ | ✅ | ✅ | ✅ | 在 GPU 顶点阶段弯曲远景地形 |
 | 远景信标光束 | ✅ | — | — | — | 在远距离显示信标光束 |
+| 扩展高度世界坐标 | ✅ | — | — | — | 支持超出原版高度范围的 LOD |
 
 `✅` 表示支持，`❌` 表示未提供，`—` 表示不适用。圆形 LOD 交接与光影包自带的交接功能同时启用时，建议关闭其中一项。
 
