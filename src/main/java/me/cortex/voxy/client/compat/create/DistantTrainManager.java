@@ -35,8 +35,9 @@ public final class DistantTrainManager {
         //Voxel-store light sample at the carriage position, refreshed periodically while it moves
         public int lightPacked = -1;
         public long lightSampledAtMs;
-        //Last time the carriage's section read compiled, for the handover hysteresis
-        public long lastCompiledMs;
+        public boolean liveOwnershipKnown;
+        public boolean liveOwns;
+        public long liveEligibleSinceNanos;
     }
 
     public static final class TrainState {
@@ -133,6 +134,23 @@ public final class DistantTrainManager {
 
     public static ShapeEntry shape(long shapeId) {
         return SHAPES.get(shapeId);
+    }
+
+    public static boolean hasRenderable(UUID trainId, int carriageIndex, ResourceLocation dimension) {
+        var state = TRAINS.get(trainId);
+        if (state == null || !dimension.equals(state.dimension)) {
+            return false;
+        }
+        var track = state.carriages.get(carriageIndex);
+        return track != null && track.cur != null && SHAPES.containsKey(track.shapeId);
+    }
+
+    public static CarriageTrack track(UUID trainId, int carriageIndex, ResourceLocation dimension) {
+        var state = TRAINS.get(trainId);
+        if (state == null || !dimension.equals(state.dimension)) {
+            return null;
+        }
+        return state.carriages.get(carriageIndex);
     }
 
     public static int meshCount() {

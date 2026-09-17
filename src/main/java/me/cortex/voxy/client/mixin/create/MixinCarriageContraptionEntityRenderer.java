@@ -32,7 +32,7 @@ public class MixinCarriageContraptionEntityRenderer {
         }
         Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
         //Same handover boundary as the distant train mesh - see TrainHandover
-        if (me.cortex.voxy.client.compat.create.TrainHandover.beyondLive(entity.position(), cam)) {
+        if (me.cortex.voxy.client.compat.create.TrainHandover.shouldCullLive(entity, cam)) {
             ci.cancel();
         }
     }

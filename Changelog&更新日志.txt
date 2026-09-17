@@ -8,6 +8,7 @@ Neo Voxy 更新日志 / Changelog
 - 将机械动力：航空学的载具渲染距离统一为区块滑块，默认跟随 LOD。
 - 修复 ByePregen 自定义区块调色板导致的摄取报错与空白 LOD。
 - 专属 LOD 网格、机械动力轨道与动态对象及 Sable 载具不再参与像素级 LOD 淡入。
+- 修复机械动力列车接管空环、边界闪烁与水体遮挡异常。
 
 ### English
 
@@ -15,6 +16,7 @@ Neo Voxy 更新日志 / Changelog
 - Changed the Create Aeronautics contraption render distance to the shared chunk slider, defaulting to Follow LOD.
 - Fixed ingest errors and empty LODs caused by ByePregen custom chunk palettes.
 - Excluded dedicated LOD meshes, Create tracks and moving objects, and Sable vehicles from per-pixel LOD fading.
+- Fixed missing Create trains, boundary flicker, and water occlusion during handover.
 
 ## 0.4.10（1.21.1 NeoForge 联动版）— 2026-09-16
 

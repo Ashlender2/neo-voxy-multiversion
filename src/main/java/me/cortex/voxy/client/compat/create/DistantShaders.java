@@ -18,6 +18,7 @@ import static org.lwjgl.opengl.GL45C.glBindTextureUnit;
 public final class DistantShaders {
     private static Shader vertexLight;
     private static Shader uniformLight;
+    private static Shader depthOnly;
 
     private static Shader patchedVertexLight;
     private static Shader patchedUniformLight;
@@ -153,6 +154,16 @@ public final class DistantShaders {
                     .compile().name("distant_uniform_light");
         }
         return uniformLight;
+    }
+
+    public static Shader depthOnly() {
+        if (depthOnly == null) {
+            depthOnly = Shader.make()
+                    .add(ShaderType.VERTEX, "voxy:compat/distant.vert")
+                    .add(ShaderType.FRAGMENT, "voxy:compat/distant_depth.frag")
+                    .compile().name("distant_depth_only");
+        }
+        return depthOnly;
     }
 
     //Raw binds; the surrounding renderStateGuarded restores whatever was here before

@@ -167,6 +167,10 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
                     viewport, this.targetTransform.set(viewport.vanillaProjection).mul(viewport.modelView));
             glColorMask(true, true, true, true);
         } else {
+            if (net.neoforged.fml.ModList.get().isLoaded("create")) {
+                me.cortex.voxy.client.compat.create.DistantTrainRenderer.replayDepthToSource(
+                        viewport, sourceFrameBuffer, srcWidth, srcHeight, this.properties.closerEqualDepthCompare());
+            }
             // normally disabled by AbstractRenderPipeline but since we are skipping it we do it here
             glDisable(GL_STENCIL_TEST);
             glDisable(GL_DEPTH_TEST);

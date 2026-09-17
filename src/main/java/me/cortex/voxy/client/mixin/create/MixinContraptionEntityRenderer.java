@@ -31,8 +31,8 @@ public class MixinContraptionEntityRenderer {
             return;
         }
         Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
-        if (entity instanceof com.simibubi.create.content.trains.entity.CarriageContraptionEntity) {
-            if (me.cortex.voxy.client.compat.create.TrainHandover.beyondLive(entity.position(), cam)) {
+        if (entity instanceof com.simibubi.create.content.trains.entity.CarriageContraptionEntity carriage) {
+            if (me.cortex.voxy.client.compat.create.TrainHandover.shouldCullLive(carriage, cam)) {
                 ci.cancel();
             }
             return;

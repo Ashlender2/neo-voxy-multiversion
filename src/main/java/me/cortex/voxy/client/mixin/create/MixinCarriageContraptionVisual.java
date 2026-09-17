@@ -40,7 +40,8 @@ public abstract class MixinCarriageContraptionVisual {
         Vec3 cam = ctx.camera().getPosition();
         //Yield exactly where the distant train mesh takes over (not the render distance): any gap
         //between the two thresholds is a ring where both draw, and the pose lag between them shows
-        if (me.cortex.voxy.client.compat.create.TrainHandover.beyondLive(entity.position(), cam)) {
+        if (entity instanceof com.simibubi.create.content.trains.entity.CarriageContraptionEntity carriage
+                && me.cortex.voxy.client.compat.create.TrainHandover.shouldCullLive(carriage, cam)) {
             //Carriage body (structure + child BEs + actors) draws through the embedding - collapse it
             embedding.transforms(VOXY$ZERO_POSE, VOXY$ZERO_NORMAL);
             //Bogeys draw through the main context, not the embedding - hide them explicitly. This
