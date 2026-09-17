@@ -6,11 +6,13 @@ Neo Voxy 更新日志 / Changelog
 
 - 修复纯 Copycats+ 多状态方块机械结构生成空远景网格，并持久化机械结构的伪装材质。
 - 修复未填充 Copycats+ 方块在 LOD 中重复烘焙并显示错误材质。
+- 完善可选联动的加载检测，并为专属模型加入仅限完整方块之间的保守面剔除。
 
 ### English
 
 - Fixed empty distant meshes for contraptions made only from multi-state Copycats+ blocks and persisted their camouflage materials.
 - Fixed repeated LOD baking and incorrect materials on unfilled Copycats+ blocks.
+- Tightened optional integration gates and added conservative face culling only between complete custom-model blocks.
 
 ## 0.4.9（1.21.1 NeoForge 联动版）— 2026-09-16
 

@@ -68,9 +68,10 @@ public class ModelFactory {
 
     //TODO: replace the fluid BlockState with a client model id integer of the fluidState, requires looking up
     // the fluid state in the mipper
-    private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks) {
-        public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks) {
-            this(textures[0], textures[1], textures[2], textures[3], textures[4], textures[5], fluidBlockStateId, fluidKind, tintingColour, framedBlocks);
+    private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean conservativeComplexModel, boolean completeComplexBlock) {
+        public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean conservativeComplexModel, boolean completeComplexBlock) {
+            this(textures[0], textures[1], textures[2], textures[3], textures[4], textures[5], fluidBlockStateId, fluidKind, tintingColour,
+                    framedBlocks, conservativeComplexModel, completeComplexBlock);
         }
     }
 
@@ -389,10 +390,12 @@ public class ModelFactory {
             layer = RenderType.solid();
         }
         boolean centeredGroundCross = (flags & SoftwareModelTextureBakery.FLAG_CENTERED_GROUND_CROSS) != 0;
+        boolean conservativeCulling = (flags & SoftwareModelTextureBakery.FLAG_CONSERVATIVE_CULLING) != 0;
         ModelBakeResultUpload bakeResult;
         try {
             bakeResult = this.processTextureBakeResult(
-                    bake.blockId, bake.state, textureData, isShaded, hasDarkenedTextures, layer, centeredGroundCross);
+                    bake.blockId, bake.state, textureData, isShaded, hasDarkenedTextures, layer,
+                    centeredGroundCross, conservativeCulling);
         } catch (Throwable t) {
             rethrowFatal(t);
             this.reportBakeFailure(bake.state, t);
@@ -505,7 +508,20 @@ public class ModelFactory {
 
     private static final java.util.Set<Object> LOGGED_SELF_CULL_PROBE_FAILURE = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    private ModelBakeResultUpload processTextureBakeResult(int blockId, BlockState blockState, ColourDepthTextureData[] textureData, boolean isShaded, boolean darkenedTinting, RenderType layer, boolean crossPlant) {
+    private static boolean hasFullOcclusionShape(BlockState state) {
+        try {
+            return Block.isShapeFullBlock(state.getOcclusionShape(
+                    net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO));
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private ModelBakeResultUpload processTextureBakeResult(int blockId, BlockState blockState,
+                                                           ColourDepthTextureData[] textureData,
+                                                           boolean isShaded, boolean darkenedTinting,
+                                                           RenderType layer, boolean crossPlant,
+                                                           boolean conservativeComplexModel) {
         if (this.idMappings[blockId] != -1) {
             //This should be impossible to reach as it means that multiple bakes for the same blockId happened and where inflight at the same time!
             throw new IllegalStateException("Block id already added: " + blockId + " for state: " + blockState);
@@ -525,8 +541,7 @@ public class ModelFactory {
         boolean leafModel = isLeafBlockState(blockState);
         boolean balancedLeaf = leafModel
                 && VoxyConfig.CONFIG.getLeafLodMode() == VoxyConfig.LeafLodMode.BALANCED;
-        var domumPlan = DomumOrnamentumCompat.getBakePlan(this.mapper, blockId);
-        boolean conservativeComplexModel = !domumPlan.isEmpty() && !domumPlan.detailedMesh();
+        boolean completeComplexBlock = !conservativeComplexModel || hasFullOcclusionShape(blockState);
 
         int modelId = -1;
 
@@ -567,7 +582,8 @@ public class ModelFactory {
         ModelEntry entry;
         {//Deduplicate same entries
             entry = new ModelEntry(textureData, clientFluidStateId, fluidKind, isBiomeColourDependent||colourProvider==null?-1:captureColourConstant(colourProvider, colourState, DEFAULT_BIOME)|0xFF000000,
-                    me.cortex.voxy.commonImpl.compat.FramedBlocksCompat.isFramedState(blockState));
+                    me.cortex.voxy.commonImpl.compat.FramedBlocksCompat.isFramedState(blockState),
+                    conservativeComplexModel, completeComplexBlock);
             int possibleDuplicate = this.modelTexture2id.getInt(entry);
             if (possibleDuplicate != -1) {//Duplicate found
                 this.idMappings[blockId] = possibleDuplicate;
@@ -680,7 +696,7 @@ public class ModelFactory {
         if (balancedLeaf) {
             cullsSame = true;
         }
-        if (conservativeComplexModel) {
+        if (conservativeComplexModel && !completeComplexBlock) {
             cullsSame = false;
         }
 
@@ -718,7 +734,7 @@ public class ModelFactory {
             boolean faceCoversFullBlock = faceSize[0] == 0 && faceSize[2] == 0 &&
                     faceSize[1] == (MODEL_TEXTURE_SIZE-1) && faceSize[3] == (MODEL_TEXTURE_SIZE-1);
             if (conservativeComplexModel) {
-                faceCoversFullBlock &= offset <= (1.0f / 64.0f)
+                faceCoversFullBlock &= completeComplexBlock && offset <= (1.0f / 64.0f)
                         && writeCount == MODEL_TEXTURE_SIZE * MODEL_TEXTURE_SIZE;
             }
 

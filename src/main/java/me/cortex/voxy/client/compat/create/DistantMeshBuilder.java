@@ -109,11 +109,23 @@ public final class DistantMeshBuilder {
     }
 
     public void blockModelLayer(BlockState state, BakedModel model, float ox, float oy, float oz,
+                                 int skyLight, int blockLight, RenderType layer,
+                                 ToIntFunction<BakedQuad> tintResolver,
+                                 net.neoforged.neoforge.client.model.data.ModelData modelData) {
+        this.blockModelLayer(state, model, ox, oy, oz, skyLight, blockLight, layer,
+                tintResolver, modelData, null);
+    }
+
+    public void blockModelLayer(BlockState state, BakedModel model, float ox, float oy, float oz,
                                 int skyLight, int blockLight, RenderType layer,
                                 ToIntFunction<BakedQuad> tintResolver,
-                                net.neoforged.neoforge.client.model.data.ModelData modelData) {
+                                net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                Predicate<Direction> faceHidden) {
         this.random.setSeed(42);
         for (Direction direction : Direction.values()) {
+            if (faceHidden != null && faceHidden.test(direction)) {
+                continue;
+            }
             this.random.setSeed(42);
             for (BakedQuad quad : model.getQuads(state, direction, this.random, modelData, layer)) {
                 int tint = quad.isTinted() ? tintResolver.applyAsInt(quad) : 0xFFFFFF;

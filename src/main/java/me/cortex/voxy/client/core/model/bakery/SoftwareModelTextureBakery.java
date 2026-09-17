@@ -135,6 +135,7 @@ public class SoftwareModelTextureBakery {
     }
 
     public static final int FLAG_CENTERED_GROUND_CROSS = 1 << 4;
+    public static final int FLAG_CONSERVATIVE_CULLING = 1 << 5;
 
     private boolean bakeBlockModel(int blockId, BlockState state, RenderType layer, boolean forceSolidLeaves) {
         if (state.getRenderShape() != RenderShape.MODEL) {
@@ -159,6 +160,7 @@ public class SoftwareModelTextureBakery {
         if (plan.isEmpty()) {
             plan = me.cortex.voxy.commonImpl.compat.FramedBlocksCompat.getBakePlan(this.mapper, blockId, state);
         }
+        this.conservativeCulling |= !plan.isEmpty();
         BlockState modelState = plan.modelState() == null ? state : plan.modelState();
         ModelData modelData = plan.modelData();
         var model = Minecraft.getInstance()
@@ -246,6 +248,7 @@ public class SoftwareModelTextureBakery {
 
     private boolean renderSnowOverlay;
     private net.minecraft.resources.ResourceLocation seasonalModelId;
+    private boolean conservativeCulling;
 
     //Derives the bake decorations from a render-only id. Only ever arms them while the seasonal
     //view is installed: without the mod, a legacy complement id still resolves and bakes as its
@@ -465,6 +468,7 @@ public class SoftwareModelTextureBakery {
 
     public int renderToOutput(int blockId, BlockState state, long outputBuffer) {
         MemoryUtil.memSet(outputBuffer, 0, 16 * 16 * 8 * 6);
+        this.conservativeCulling = false;
 
         boolean isBlock = !ModelFactory.isFluidBlockState(state);
 
@@ -543,7 +547,9 @@ public class SoftwareModelTextureBakery {
             }
         }
 
-        return (isAnyShaded ? 1 : 0) | (anyTranslucent ? 4 : 0) | (anyDiscard ? 8 : 0) | (centeredGroundCross ? FLAG_CENTERED_GROUND_CROSS : 0);
+        return (isAnyShaded ? 1 : 0) | (anyTranslucent ? 4 : 0) | (anyDiscard ? 8 : 0)
+                | (centeredGroundCross ? FLAG_CENTERED_GROUND_CROSS : 0)
+                | (this.conservativeCulling ? FLAG_CONSERVATIVE_CULLING : 0);
     }
 
     static {

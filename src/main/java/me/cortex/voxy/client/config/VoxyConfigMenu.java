@@ -36,7 +36,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
         boolean framedBlocksInstalled = ModList.get().isLoaded("framedblocks");
         boolean littleTilesInstalled = ModList.get().isLoaded("littletiles");
         boolean domumInstalled = ModList.get().isLoaded("domum_ornamentum");
-        boolean seasonsInstalled = ModList.get().isLoaded("eclipticseasons");
+        boolean seasonsInstalled = me.cortex.voxy.client.core.compat.eclipticseasons.EsCompatGate.shouldArm();
 
         var cc = B.registerModOptions("voxy", VoxyCommon.displayName(), VoxyCommon.MOD_VERSION)
                 .setIcon(ResourceLocation.parse("voxy:icon.png"));

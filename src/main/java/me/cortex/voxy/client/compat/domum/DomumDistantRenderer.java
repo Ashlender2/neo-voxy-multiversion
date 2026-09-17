@@ -239,6 +239,12 @@ public final class DomumDistantRenderer implements LodPipelineHooks.Renderer {
         try {
             var blockRenderer = Minecraft.getInstance().getBlockRenderer();
             var colors = Minecraft.getInstance().getBlockColors();
+            boolean[] fullBlocks = new boolean[4096];
+            for (int i = 0; i < blocks.length; i += 2) {
+                int local = blocks[i];
+                fullBlocks[local] = me.cortex.voxy.client.compat.create.DistantFaceCulling.isFullBlock(
+                        mapper.getBlockStateFromBlockId(blocks[i + 1]));
+            }
             for (int i = 0; i < blocks.length; i += 2) {
                 int local = blocks[i], blockId = blocks[i + 1];
                 var plan = DomumOrnamentumCompat.getBakePlan(mapper, blockId);
@@ -254,7 +260,10 @@ public final class DomumDistantRenderer implements LodPipelineHooks.Renderer {
                 }
                 int light = DistantLightSampler.sample(level, wx, wy, wz);
                 builder.blockModel(state, model, x, y, z,
-                        DistantLightSampler.sky(light), DistantLightSampler.block(light), null, tint, plan.modelData());
+                        DistantLightSampler.sky(light), DistantLightSampler.block(light),
+                        direction -> me.cortex.voxy.client.compat.create.DistantFaceCulling
+                                .hidesSectionFace(fullBlocks, local, direction),
+                        tint, plan.modelData());
             }
             return builder.build();
         } catch (Throwable t) {

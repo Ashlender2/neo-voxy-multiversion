@@ -18,10 +18,7 @@ import java.util.Map;
 public final class CarriageMeshBaker {
     private CarriageMeshBaker() {}
 
-    //Create types appear only in the kinetic-partial branch of the bake. The train shape payload
-    //handler registers unconditionally, so a Create-less client must still bake the static geometry;
-    //without this gate every kinetic block throws a swallowed NoClassDefFoundError per block instead
-    //of skipping cleanly.
+    //Keep optional Create types behind a local guard as a second line of defence for stored meshes.
     private static final boolean CREATE_LOADED =
             net.neoforged.fml.ModList.get() != null && net.neoforged.fml.ModList.get().isLoaded("create");
 
@@ -148,11 +145,12 @@ public final class CarriageMeshBaker {
                     modelData = beData != null ? beData : net.neoforged.neoforge.client.model.data.ModelData.EMPTY;
                 }
                 //Carriages move through the sky; bake at full skylight and dim per-draw
+                boolean fullBlock = DistantFaceCulling.isFullBlock(state, slice, pos);
                 builder.blockModel(state, model,
                         pos.getX(), pos.getY(), pos.getZ(), 15, 0,
                         direction -> {
                             var neighbor = grid.get(cursor.setWithOffset(pos, direction));
-                            return neighbor != null && neighbor.canOcclude();
+                            return fullBlock && DistantFaceCulling.isFullBlock(neighbor, slice, cursor);
                         }, tint == -1 ? 0xFFFFFF : tint, modelData);
                 //Kinetic moving parts: Create swaps shaft/cog baked models for a wrapper that answers
                 //the per-layer chunk path with nothing (the BER/visual owns them live), so the

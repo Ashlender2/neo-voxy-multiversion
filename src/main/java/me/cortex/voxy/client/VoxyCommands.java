@@ -189,6 +189,10 @@ public class VoxyCommands {
 
     //Arms (or stops early) the per-frame occlusion recorder; the dump file lands in the game dir
     private static int occlusionCapture(CommandContext<CommandSourceStack> ctx, int seconds) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("create")) {
+            ctx.getSource().sendSuccess(() -> Component.literal("create not loaded"), false);
+            return 0;
+        }
         String msg;
         if (me.cortex.voxy.client.compat.create.DistantOcclusionDebug.isActive()) {
             msg = me.cortex.voxy.client.compat.create.DistantOcclusionDebug.stopAndDump();
@@ -309,8 +313,9 @@ public class VoxyCommands {
     //while the structure stays invisible means we let it through and the problem is past us
     //(transform/depth); a renderer that is never even called clears our culls entirely.
     private static int dumpShipContraptions(CommandContext<CommandSourceStack> ctx) {
-        if (!net.neoforged.fml.ModList.get().isLoaded("create")) {
-            ctx.getSource().sendSuccess(() -> Component.literal("create not loaded"), false);
+        var modList = net.neoforged.fml.ModList.get();
+        if (!modList.isLoaded("create") || !modList.isLoaded("sable")) {
+            ctx.getSource().sendSuccess(() -> Component.literal("create and sable are required"), false);
             return 0;
         }
         String msg = me.cortex.voxy.client.compat.create.ShipContraptionDebug.dump();
@@ -323,6 +328,10 @@ public class VoxyCommands {
     //age and distance. Zero tracked trains with a moving train 192-3072 blocks away means the
     //server side is not sampling (old jar or no voxy on the server).
     private static int dumpTrains(CommandContext<CommandSourceStack> ctx) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("create")) {
+            ctx.getSource().sendSuccess(() -> Component.literal("create not loaded"), false);
+            return 0;
+        }
         var cfg = me.cortex.voxy.client.config.VoxyConfig.CONFIG;
         var sb = new StringBuilder("distant trains: rendering=").append(cfg.isRenderingEnabled())
                 .append(" distantTrains=").append(cfg.distantTrains)
@@ -465,7 +474,9 @@ public class VoxyCommands {
         var instance = (VoxyClientInstance)VoxyCommon.getInstance();
         if (instance == null) return false;
         var wr = Minecraft.getInstance().levelRenderer;
-        me.cortex.voxy.client.compat.littletiles.LittleTilesDistantRenderer.checkpointActive();
+        if (net.neoforged.fml.ModList.get().isLoaded("littletiles")) {
+            me.cortex.voxy.client.compat.littletiles.LittleTilesDistantRenderer.checkpointActive();
+        }
         if (wr!=null) {
             ((IGetVoxyRenderSystem)wr).voxy$shutdownRenderer();
         }

@@ -262,6 +262,12 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
         try {
             var blockRenderer = Minecraft.getInstance().getBlockRenderer();
             var colors = Minecraft.getInstance().getBlockColors();
+            boolean[] fullBlocks = new boolean[4096];
+            for (int i = 0; i < blocks.length; i += 2) {
+                int local = blocks[i];
+                fullBlocks[local] = me.cortex.voxy.client.compat.create.DistantFaceCulling.isFullBlock(
+                        mapper.getBlockStateFromBlockId(blocks[i + 1]));
+            }
             for (int i = 0; i < blocks.length; i += 2) {
                 int local = blocks[i], blockId = blocks[i + 1];
                 BlockState state = mapper.getBlockStateFromBlockId(blockId);
@@ -281,11 +287,15 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
                 for (RenderType layer : new RenderType[]{RenderType.solid(), RenderType.cutout(), RenderType.cutoutMipped()}) {
                     opaque.blockModelLayer(state, model, x, y, z,
                             DistantLightSampler.sky(light), DistantLightSampler.block(light),
-                            layer, tint, plan.modelData());
+                            layer, tint, plan.modelData(),
+                            direction -> me.cortex.voxy.client.compat.create.DistantFaceCulling
+                                    .hidesSectionFace(fullBlocks, local, direction));
                 }
                 translucent.blockModelLayer(state, model, x, y, z,
                         DistantLightSampler.sky(light), DistantLightSampler.block(light),
-                        RenderType.translucent(), tint, plan.modelData());
+                        RenderType.translucent(), tint, plan.modelData(),
+                        direction -> me.cortex.voxy.client.compat.create.DistantFaceCulling
+                                .hidesSectionFace(fullBlocks, local, direction));
             }
             opaqueCpu = opaque.assemble();
             translucentCpu = translucent.assemble();

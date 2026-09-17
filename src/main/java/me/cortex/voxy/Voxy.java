@@ -28,8 +28,6 @@ public class Voxy {
         //provides the sable contraption ticket hook (MixinServerLevel) and, with Create installed,
         //the distant-train pose sampler. Everything else is client side.
 
-        modEventBus.addListener(Voxy::registerPayloads);
-
         //Far players / ridden vehicles: server samples player snapshots, client renders lightweight
         //proxies past the entity view distance
         modEventBus.addListener(this::registerFarEntityPayloads);
@@ -37,6 +35,7 @@ public class Voxy {
         NeoForge.EVENT_BUS.addListener(this.farEntityService::onPlayerLoggedOut);
 
         if (ModList.get().isLoaded("create")) {
+            modEventBus.addListener(Voxy::registerPayloads);
             //Server-side train sampling (works on the integrated server too). The sampler class is
             //the only place that touches Create classes, so it must stay behind this gate.
             NeoForge.EVENT_BUS.register(me.cortex.voxy.commonImpl.compat.create.CreateTrainSampler.INSTANCE);
@@ -66,17 +65,12 @@ public class Voxy {
                 NeoForge.EVENT_BUS.register(me.cortex.voxy.client.core.compat.eclipticseasons.VoxyEsHandler.INSTANCE);
             }
 
-            //Distant train rendering is Create-free on the client (poses + baked meshes arrive over
-            //our own payloads), so it registers unconditionally. Bogeys go through Create's own
-            //style renderers and need the mod present. Rendering hooks the tail of the LOD pipeline
-            //so LOD terrain depth occludes trains and tracks; the event bus only handles cleanup.
-            var trainRenderer = new me.cortex.voxy.client.compat.create.DistantTrainRenderer();
-            NeoForge.EVENT_BUS.register(trainRenderer);
-            me.cortex.voxy.client.compat.LodPipelineHooks.register(trainRenderer);
-            //Occlusion recorder behind /voxy debug trains occlusion (Create-free)
-            me.cortex.voxy.client.compat.LodPipelineHooks.frameDebugProbe =
-                    me.cortex.voxy.client.compat.create.DistantOcclusionDebug.PROBE;
             if (ModList.get().isLoaded("create")) {
+                var trainRenderer = new me.cortex.voxy.client.compat.create.DistantTrainRenderer();
+                NeoForge.EVENT_BUS.register(trainRenderer);
+                me.cortex.voxy.client.compat.LodPipelineHooks.register(trainRenderer);
+                me.cortex.voxy.client.compat.LodPipelineHooks.frameDebugProbe =
+                        me.cortex.voxy.client.compat.create.DistantOcclusionDebug.PROBE;
                 //Bogey snapshot capture touches Create's registries, so it stays behind this gate
                 me.cortex.voxy.client.compat.create.DistantTrainRenderer.bogeyMeshProvider =
                         me.cortex.voxy.client.compat.create.DistantBogeyMeshes::getOrCapture;

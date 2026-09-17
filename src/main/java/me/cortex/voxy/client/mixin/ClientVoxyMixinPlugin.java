@@ -21,6 +21,8 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
     private static boolean sodiumExtraInstalled;
     private static boolean aeronauticsInstalled;
     private static boolean simulatedInstalled;
+    private static boolean bitsNBobsInstalled;
+    private static boolean azimuthInstalled;
 
     private static boolean isLoadedEarly(String modId) {
         var list = LoadingModList.get();
@@ -41,6 +43,8 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
         sodiumExtraInstalled = isLoadedEarly("sodium_extra");
         aeronauticsInstalled = isLoadedEarly("aeronautics");
         simulatedInstalled = isLoadedEarly("simulated");
+        bitsNBobsInstalled = isLoadedEarly("bits_n_bobs");
+        azimuthInstalled = isLoadedEarly("azimuth");
 
         //Second line of defence behind the mods.toml incompatible declaration: if load ordering
         //ever lets that mod's mixins prepare before FML's dependency check fires, the crash report
@@ -102,8 +106,12 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
             mixins.add("create.AccessorAbstractVisualLevel");
             mixins.add("create.MixinKineticBlockEntityVisual");
             mixins.add("create.MixinKineticMachineVisuals");
-            mixins.add("create.MixinBnbKineticVisuals");
-            mixins.add("create.MixinAzimuthBehaviourVisual");
+            if (bitsNBobsInstalled) {
+                mixins.add("create.MixinBnbKineticVisuals");
+            }
+            if (azimuthInstalled) {
+                mixins.add("create.MixinAzimuthBehaviourVisual");
+            }
             mixins.add("create.MixinVisualizationManagerImpl");
             mixins.add("create.MixinSafeBlockEntityRenderer");
             //Ship-borne contraptions: force open the plot-coordinate render gates that kill them
