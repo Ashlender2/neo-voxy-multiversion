@@ -6,11 +6,13 @@ Neo Voxy 更新日志 / Changelog
 
 - 清理失效源码与注释代码，精简源码注释，并将 README 拆分为原版功能和 Mod 联动表格。
 - 将机械动力：航空学的载具渲染距离统一为区块滑块，默认跟随 LOD。
+- 修复 ByePregen 自定义区块调色板导致的摄取报错与空白 LOD。
 
 ### English
 
 - Removed disabled source and commented-out code, simplified comments, and split the README into vanilla-feature and mod-integration tables.
 - Changed the Create Aeronautics contraption render distance to the shared chunk slider, defaulting to Follow LOD.
+- Fixed ingest errors and empty LODs caused by ByePregen custom chunk palettes.
 
 ## 0.4.10（1.21.1 NeoForge 联动版）— 2026-09-16
 

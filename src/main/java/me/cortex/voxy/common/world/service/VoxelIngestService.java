@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.lighting.LayerLightSectionStorage;
 import org.jetbrains.annotations.NotNull;
 
@@ -159,7 +160,7 @@ public class VoxelIngestService {
                 engine.acquireRef();
                 this.ingestQueue.add(new IngestSection(
                         chunk.getPos().x, i, chunk.getPos().z, engine, chunk,
-                        domumBlockEntities.forSection(i), section, null, null,
+                        domumBlockEntities.forSection(i), snapshotCustomSection(section), null, null,
                         littleTiles == null ? null : littleTiles.section(i)));
                 try {
                     this.service.execute();
@@ -206,7 +207,7 @@ public class VoxelIngestService {
             engine.acquireRef();
             this.ingestQueue.add(new IngestSection(
                     chunk.getPos().x, i, chunk.getPos().z, engine, chunk,
-                    domumBlockEntities.forSection(i), section, bl, sl,
+                    domumBlockEntities.forSection(i), snapshotCustomSection(section), bl, sl,
                     littleTiles == null ? null : littleTiles.section(i)));
             try {
                 this.service.execute();
@@ -255,7 +256,7 @@ public class VoxelIngestService {
                 DomumOrnamentumCompat.captureBlockEntities(chunk, section);
         var littleTiles = me.cortex.voxy.commonImpl.compat.littletiles.LittleTilesCompat.capture(chunk);
         this.ingestQueue.add(new IngestSection(
-                x, y, z, engine, chunk, domumBlockEntities, section, bl, sl,
+                x, y, z, engine, chunk, domumBlockEntities, snapshotCustomSection(section), bl, sl,
                 littleTiles == null ? null : littleTiles.section(y)));
         try {
             this.service.execute();
@@ -303,5 +304,12 @@ public class VoxelIngestService {
         if (engine.instanceIn == null) return false;
         if (!engine.instanceIn.isIngestEnabled(null)) return false;
         return engine.instanceIn.getIngestService().rawIngest0(engine, chunk, section, x, y, z, bl, sl);
+    }
+
+    private static LevelChunkSection snapshotCustomSection(LevelChunkSection section) {
+        if (section == null || section.getStates().getClass() == PalettedContainer.class) {
+            return section;
+        }
+        return new LevelChunkSection(section.getStates().copy(), section.getBiomes());
     }
 }
