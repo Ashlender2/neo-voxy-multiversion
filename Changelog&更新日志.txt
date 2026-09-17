@@ -1,5 +1,17 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.4.9（1.21.1 NeoForge 联动版）— 2026-09-16
+
+### 简体中文
+
+- 新增 Create: Copycats+ 3.0.9 联动，持久化多部件材质并生成斜坡、切片、门、传动杆和齿轮的专属 LOD 网格。
+- 视频设置新增“机械动力：伪装方块+”开关与距离选项。
+
+### English
+
+- Added Create: Copycats+ 3.0.9 integration with persistent per-part materials and dedicated LOD meshes for slopes, slices, doors, shafts, and cogwheels.
+- Added Create: Copycats+ toggle and distance options to Video Settings.
+
 ## 0.4.8（1.21.1 NeoForge 联动版）— 2026-09-16
 
 ### 简体中文

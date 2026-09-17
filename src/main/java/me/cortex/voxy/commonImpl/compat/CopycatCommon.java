@@ -38,14 +38,17 @@ public final class CopycatCommon {
         return LOADED && instance != null && COPYCAT_CLASSES.get(instance.getClass());
     }
 
-    //The slice of a copycat block entity's nbt the client needs to rebuild its look (both mods
-    //store the material under "Material"). Null when there is nothing worth carrying.
     public static CompoundTag renderNbt(BlockState state, CompoundTag beNbt) {
-        if (beNbt == null || !isCopycatState(state) || !beNbt.contains("Material")) {
+        if (beNbt == null || !isCopycatState(state)) {
             return null;
         }
         CompoundTag out = new CompoundTag();
-        out.put("Material", beNbt.getCompound("Material").copy());
-        return out;
+        if (beNbt.contains("Material")) {
+            out.put("Material", beNbt.getCompound("Material").copy());
+        }
+        if (beNbt.contains("material_data")) {
+            out.put("material_data", beNbt.getCompound("material_data").copy());
+        }
+        return out.isEmpty() ? null : out;
     }
 }

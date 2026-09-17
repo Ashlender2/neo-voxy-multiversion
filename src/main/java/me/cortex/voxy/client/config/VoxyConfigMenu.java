@@ -31,6 +31,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
         boolean sableInstalled = ModList.get().isLoaded("sable");
         boolean createInstalled = ModList.get().isLoaded("create");
         boolean powerGridInstalled = ModList.get().isLoaded("powergrid");
+        boolean copycatsInstalled = ModList.get().isLoaded("copycats");
         boolean simulatedInstalled = ModList.get().isLoaded("simulated");
         boolean framedBlocksInstalled = ModList.get().isLoaded("framedblocks");
         boolean littleTilesInstalled = ModList.get().isLoaded("littletiles");
@@ -434,6 +435,21 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                         .setFormatter(VoxyConfigMenu::formatCreateDistance)
                                         .setImpact(OptionImpact.LOW)
                         ).setEnablerInherit(s->powerGridInstalled),
+                        new Group(Component.translatable("voxy.config.group.copycats"),
+                                new BoolOption(
+                                        "voxy:distant_copycats",
+                                        Component.translatable("voxy.config.compat.distantCopycats"),
+                                        ()->CFG.distantCopycats, v->CFG.distantCopycats=v)
+                                        .setPostChangeFlags(RENDER_RELOAD)
+                                        .setImpact(OptionImpact.MEDIUM),
+                                new IntOption(
+                                        "voxy:distant_copycats_distance",
+                                        Component.translatable("voxy.config.compat.distantCopycatsDistance"),
+                                        ()->CFG.distantCopycatsMaxChunks, v->CFG.distantCopycatsMaxChunks=v,
+                                        new Range(0, 192, 8))
+                                        .setFormatter(VoxyConfigMenu::formatCreateDistance)
+                                        .setImpact(OptionImpact.MEDIUM)
+                        ).setEnablerInherit(s->copycatsInstalled),
                         new Group(Component.translatable("voxy.config.group.framedblocks"),
                                 new BoolOption(
                                         "voxy:distant_framedblocks",

@@ -100,6 +100,11 @@ public class Voxy {
                 NeoForge.EVENT_BUS.register(kineticRenderer);
                 me.cortex.voxy.client.compat.LodPipelineHooks.register(kineticRenderer);
 
+                var copycatRenderer = new me.cortex.voxy.client.compat.copycat.CopycatDistantRenderer();
+                NeoForge.EVENT_BUS.register(copycatRenderer);
+                me.cortex.voxy.client.compat.LodPipelineHooks.register(copycatRenderer);
+                me.cortex.voxy.client.compat.LodPipelineHooks.registerTranslucent(copycatRenderer);
+
                 //Ship-borne kinetics render natively (a ship is one connected drivetrain - copies
                 //cannot keep adjacent shafts in sync); the cull exempts them entirely.
             }

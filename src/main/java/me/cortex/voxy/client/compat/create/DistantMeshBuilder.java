@@ -1,6 +1,7 @@
 package me.cortex.voxy.client.compat.create;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -10,6 +11,7 @@ import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.util.function.ToIntFunction;
 import java.util.function.Predicate;
 
 //CPU-side mesh assembly straight from BakedQuad assets into the distant vertex format. Nothing in
@@ -103,6 +105,25 @@ public final class DistantMeshBuilder {
             for (BakedQuad quad : model.getQuads(state, null, this.random, modelData, layer)) {
                 this.quad(null, quad, ox, oy, oz, skyLight, blockLight, quad.isTinted() ? tintRgb : 0xFFFFFF);
             }
+        }
+    }
+
+    public void blockModelLayer(BlockState state, BakedModel model, float ox, float oy, float oz,
+                                int skyLight, int blockLight, RenderType layer,
+                                ToIntFunction<BakedQuad> tintResolver,
+                                net.neoforged.neoforge.client.model.data.ModelData modelData) {
+        this.random.setSeed(42);
+        for (Direction direction : Direction.values()) {
+            this.random.setSeed(42);
+            for (BakedQuad quad : model.getQuads(state, direction, this.random, modelData, layer)) {
+                int tint = quad.isTinted() ? tintResolver.applyAsInt(quad) : 0xFFFFFF;
+                this.quad(null, quad, ox, oy, oz, skyLight, blockLight, tint);
+            }
+        }
+        this.random.setSeed(42);
+        for (BakedQuad quad : model.getQuads(state, null, this.random, modelData, layer)) {
+            int tint = quad.isTinted() ? tintResolver.applyAsInt(quad) : 0xFFFFFF;
+            this.quad(null, quad, ox, oy, oz, skyLight, blockLight, tint);
         }
     }
 

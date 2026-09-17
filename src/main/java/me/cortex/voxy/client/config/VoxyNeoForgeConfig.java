@@ -167,6 +167,14 @@ public class VoxyNeoForgeConfig {
             .comment("Maximum PowerGrid wire LOD distance in chunks. 0 follows Voxy's LOD radius.")
             .defineInRange("distantPowerGridWireMaxChunks", 0, 0, 192);
 
+    private static final ModConfigSpec.BooleanValue DISTANT_COPYCATS = BUILDER
+            .comment("Render Create and Copycats+ camouflage blocks with dedicated LOD meshes")
+            .define("distantCopycats", true);
+
+    private static final ModConfigSpec.IntValue DISTANT_COPYCATS_MAX_CHUNKS = BUILDER
+            .comment("Maximum Copycats+ LOD distance in chunks. 0 follows Voxy's LOD radius.")
+            .defineInRange("distantCopycatsMaxChunks", 0, 0, 192);
+
     private static final ModConfigSpec.BooleanValue DISTANT_SIMULATED_LASERS = BUILDER
             .comment("Render Simulated laser-pointer beams beyond block-entity render distance")
             .define("distantSimulatedLasers", true);
@@ -235,6 +243,8 @@ public class VoxyNeoForgeConfig {
         VoxyConfig.CONFIG.distantKinetics = DISTANT_KINETICS.get();
         VoxyConfig.CONFIG.distantPowerGridWires = DISTANT_POWERGRID_WIRES.get();
         VoxyConfig.CONFIG.distantPowerGridWireMaxChunks = DISTANT_POWERGRID_WIRE_MAX_CHUNKS.get();
+        VoxyConfig.CONFIG.distantCopycats = DISTANT_COPYCATS.get();
+        VoxyConfig.CONFIG.distantCopycatsMaxChunks = DISTANT_COPYCATS_MAX_CHUNKS.get();
         VoxyConfig.CONFIG.distantSimulatedLasers = DISTANT_SIMULATED_LASERS.get();
         VoxyConfig.CONFIG.distantSimulatedLaserMaxChunks = DISTANT_SIMULATED_LASER_MAX_CHUNKS.get();
         VoxyConfig.CONFIG.distantFramedBlocks = DISTANT_FRAMED_BLOCKS.get();
@@ -282,6 +292,8 @@ public class VoxyNeoForgeConfig {
         DISTANT_KINETICS.set(VoxyConfig.CONFIG.distantKinetics);
         DISTANT_POWERGRID_WIRES.set(VoxyConfig.CONFIG.distantPowerGridWires);
         DISTANT_POWERGRID_WIRE_MAX_CHUNKS.set(VoxyConfig.CONFIG.distantPowerGridWireMaxChunks);
+        DISTANT_COPYCATS.set(VoxyConfig.CONFIG.distantCopycats);
+        DISTANT_COPYCATS_MAX_CHUNKS.set(VoxyConfig.CONFIG.distantCopycatsMaxChunks);
         DISTANT_SIMULATED_LASERS.set(VoxyConfig.CONFIG.distantSimulatedLasers);
         DISTANT_SIMULATED_LASER_MAX_CHUNKS.set(VoxyConfig.CONFIG.distantSimulatedLaserMaxChunks);
         DISTANT_FRAMED_BLOCKS.set(VoxyConfig.CONFIG.distantFramedBlocks);

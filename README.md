@@ -22,7 +22,7 @@ Neo Voxy 由 **JohnSnow** 维护，在 [NHblock714/voxy](https://github.com/NHbl
 
 | 版本 | 安装位置 | 渲染依赖 | Java | 发布文件 |
 |---|---|---|---:|---|
-| 1.21.1 NeoForge 联动版 | 客户端与服务端 | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.8-mc1.21.1-neoforge-integrations.jar` |
+| 1.21.1 NeoForge 联动版 | 客户端与服务端 | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.9-mc1.21.1-neoforge-integrations.jar` |
 | 1.21.1 NeoForge 纯客户端版 | 仅客户端 | Sodium 0.8 / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
 | 1.20.1 Forge 纯客户端版 | 仅客户端 | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | 26.1.2 NeoForge 纯客户端版 | 仅客户端 | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
@@ -49,6 +49,7 @@ Neo Voxy 由 **JohnSnow** 维护，在 [NHblock714/voxy](https://github.com/NHbl
 | Sodium / Iris | ✅ | ✅ | — | ✅ | 26.1.2 仅以 Sodium 0.9.1 为兼容目标，Iris 使用 1.11.2+ |
 | Embeddium / Oculus | — | — | ✅ | — | Embeddium 为渲染后端，Oculus 提供光影支持 |
 | Create | ✅ | — | — | — | 远景列车、轨道、动态结构与动力部件 |
+| Create: Copycats+ | ✅ | — | — | — | 以 3.0.9 为兼容目标的多材质专属 LOD 模型 |
 | Sable | ✅ | — | — | — | Sable 2.0.5 远景物理结构及深度兼容 |
 | Ecliptic Seasons | ✅ | — | — | — | 季节积雪、结冰水体、季节模型与颜色 |
 | Domum Ornamentum | ✅ | — | — | — | 完全兼容：精细独立模型、材质与持久缓存 |
@@ -75,6 +76,7 @@ Neo Voxy 由 **JohnSnow** 维护，在 [NHblock714/voxy](https://github.com/NHbl
 - PowerGrid 远景电线：联动版覆盖 PowerGrid 注册的悬垂线、方块折线、软线和灯串软线。悬垂线按端点与线长重建悬链线，方块线保存真实折线路径；均可单独开关并限制距离。
 - LittleTiles 远景材质：静态 1/8 格网格按不透明与半透明通道分离，保留小方块颜色 Alpha、方块发光强度和逐朝向纹理坐标；光影补丁可继续用同一图集坐标读取法线/高光材质。
 - FramedBlocks：联动版在区段摄取时把方块实体的主/副伪装、强化状态、可折叠偏移及其他模型数据登记为持久化变体；LOD 模型烘焙时恢复完整 `ModelData`，并使用伪装方块的染色来源。
+- Create: Copycats+：联动版持久化各部件材质，并为斜坡、切片、门、传动杆和齿轮生成专属远景网格；可单独开关并限制距离。
 - Simulated 远景激光：联动版捕获激光指示器的动态方向、长度、颜色与红石强度，在原版方块实体距离外以专用半透明阶段继续渲染；可单独开关并限制距离。
 - 进服消息：每次进入服务器或单人世界显示版本提示，默认开启，可在 Sodium/Embeddium 的 Neo Voxy 配置中关闭。
 

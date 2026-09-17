@@ -23,7 +23,7 @@ Neo Voxy is maintained by **JohnSnow**. It extends [NHblock714/voxy](https://git
 
 | Edition | Install side | Renderer | Java | Release file |
 |---|---|---|---:|---|
-| 1.21.1 NeoForge integrations | Client and server | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.8-mc1.21.1-neoforge-integrations.jar` |
+| 1.21.1 NeoForge integrations | Client and server | Sodium 0.8 / Iris | 21 | `neo-voxy-0.4.9-mc1.21.1-neoforge-integrations.jar` |
 | 1.21.1 NeoForge client | Client only | Sodium 0.8 / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
 | 1.20.1 Forge client | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
 | 26.1.2 NeoForge client | Client only | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
@@ -50,6 +50,7 @@ Release JARs remove unused platform natives, duplicate module descriptors, and b
 | Sodium / Iris | ✅ | ✅ | — | ✅ | 26.1.2 targets Sodium 0.9.1 only, with Iris 1.11.2+ |
 | Embeddium / Oculus | — | — | ✅ | — | Embeddium is the renderer; Oculus provides shader support |
 | Create | ✅ | — | — | — | Distant trains, tracks, contraptions, and kinetic components |
+| Create: Copycats+ | ✅ | — | — | — | Dedicated multi-material LOD models targeting 3.0.9 |
 | Sable | ✅ | — | — | — | Sable 2.0.5 distant physics objects and depth integration |
 | Ecliptic Seasons | ✅ | — | — | — | Seasonal snow, frozen water, seasonal models, and colours |
 | Domum Ornamentum | ✅ | — | — | — | Full support: detailed dedicated models, materials, and persistent cache |
@@ -76,6 +77,7 @@ Release JARs remove unused platform natives, duplicate module descriptors, and b
 - PowerGrid distant wires: the integrations edition covers all registered PowerGrid wire entities: hanging wires, routed block wires, cords, and string-light cords. Hanging types reconstruct their catenary from endpoints and length, while block wires preserve their routed polyline. The feature has an independent switch and distance limit.
 - LittleTiles distant materials: static 1/8-block meshes are split into opaque and translucent passes and retain tile alpha, block emission, and per-face atlas coordinates. Shader patches can use those same atlas coordinates for normal/specular material sampling.
 - FramedBlocks: the integrations edition records primary and secondary camos, reinforcement, collapsible offsets, and other block-entity model data as persistent section variants. LOD baking restores the complete `ModelData` and uses the camo block as its tint source.
+- Create: Copycats+: the integrations edition persists per-part materials and builds dedicated distant meshes for slopes, slices, doors, shafts, and cogwheels. It has an independent switch and distance limit.
 - Simulated distant lasers: the integrations edition captures each laser pointer's dynamic direction, length, colour, and redstone strength, then continues rendering it through a dedicated translucent stage beyond block-entity range. It has an independent switch and distance limit.
 - Join message: shown whenever a server or single-player world is entered, enabled by default and removable from the Neo Voxy Sodium/Embeddium settings.
 
