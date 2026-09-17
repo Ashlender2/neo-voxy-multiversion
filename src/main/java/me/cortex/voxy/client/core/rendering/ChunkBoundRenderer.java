@@ -27,14 +27,6 @@ import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL31.glDrawElementsInstanced;
 import static org.lwjgl.opengl.GL42.glDrawElementsInstancedBaseInstance;
 
-//Rasterizes an AABB per vanilla-rendered chunk section into the depth bounding buffer - the mask
-//that keeps LOD terrain from drawing over the vanilla area.
-//
-//The section set is streamed from sodium's own render-list traversal each time it rebuilds
-//(MixinSectionCollector), not tracked from build/unload events: the mask then covers exactly the
-//sections sodium draws this frame. Punching by "every built section in range" both over-punched
-//(sections built but not drawn - the void ring at the render distance edge, sections mid-rebuild)
-//and paid for tens of thousands of boxes when only the visible few thousand matter.
 public class ChunkBoundRenderer {
     private static final int INIT_MAX_SECTION_COUNT = 1<<12;
 
@@ -126,9 +118,6 @@ public class ChunkBoundRenderer {
 
         {//This is recomputed to be in chunk section space not worldsection
 
-            //Camera block pos. floor, not a cast: a cast truncates toward zero, so at negative
-            //coordinates it lands one block the wrong way and the sub-block remainder below comes out
-            //negative, shifting the whole mask by a block on that side of the origin.
             int bx = (int)Math.floor(viewport.cameraX);
             int by = (int)Math.floor(viewport.cameraY);
             int bz = (int)Math.floor(viewport.cameraZ);
@@ -177,7 +166,6 @@ public class ChunkBoundRenderer {
 
             glDepthFunc(this.properties.closerEqualDepthCompare());
 
-            //TODO: check this is correct
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
         }

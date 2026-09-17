@@ -81,10 +81,6 @@ public class SoftwareModelTextureBakery {
     }
 
     private void _doSetupTexture(int glId) {
-        // This readback shares global GL state with custom renderers. In particular, Universal Mod
-        // Core's OBJ renderer tracks its own texture binding and assumes foreign renderers return the
-        // binding unchanged. Leaving the block atlas bound makes its next model sample grass/terrain
-        // sprites instead of the OBJ material.
         int previousTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
         int previousPackBuffer = glGetInteger(GL_PIXEL_PACK_BUFFER_BINDING);
         int previousRowLength = glGetInteger(GL_PACK_ROW_LENGTH);
@@ -139,10 +135,6 @@ public class SoftwareModelTextureBakery {
 
     private boolean bakeBlockModel(int blockId, BlockState state, RenderType layer, boolean forceSolidLeaves) {
         if (state.getRenderShape() != RenderShape.MODEL) {
-            //Vanilla only draws the json model for MODEL-shaped states. ENTITYBLOCK_ANIMATED blocks
-            //(Create cogwheels and friends) still carry a full json the game never renders - baking it
-            //shows up at LOD range as a boxy ghost of geometry that does not exist up close. Their
-            //distant look is owned by the kinetic snapshots, which capture the real rendered parts.
             return false;
         }
 
@@ -438,13 +430,6 @@ public class SoftwareModelTextureBakery {
             * ModelFactory.MODEL_TEXTURE_SIZE) * 8;
     // Faces are appended in direction order: down, up, north, south, west, east.
 
-    //The layer to hand getQuads. It has to come from the MODEL's declared set, not from the block's
-    //registered chunk render type: those disagree more often than one would hope, and the chunk mesher
-    //only ever queries what the model declares, so a model is within its rights to assume it never
-    //sees anything else. Immersive Engineering's conveyor is the case that found this - it declares
-    //{cutout, translucent} and keys an internal per-layer cache on exactly those, so being asked for
-    //the block's registered solid() handed it a null cache and it threw.
-    //A copycat is the deliberate exception and never reaches here; its gate is bypassed with null.
     private static RenderType resolveQueryLayer(BakedModel model, BlockState modelState, ModelData modelData,
                                                 RenderType layer) {
         ChunkRenderTypeSet declared;
@@ -457,9 +442,6 @@ public class SoftwareModelTextureBakery {
         if (declared == null || declared.isEmpty() || declared.contains(layer)) {
             return layer;
         }
-        //Not declared: take the model at its word and ask for something it does claim to emit, rather
-        //than nothing at all - the final opaque/cutout/translucent call is made from the baked pixels
-        //afterwards, so querying a neighbouring layer costs correctness nothing here.
         for (RenderType candidate : declared) {
             return candidate;
         }

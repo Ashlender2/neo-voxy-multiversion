@@ -25,13 +25,6 @@ layout(binding = STATISTICS_BUFFER_BINDING, std430) restrict buffer statisticsBu
 };
 #endif
 
-/*
-    uint  count;
-    uint  instanceCount;
-    uint  firstIndex;
-    int  baseVertex;
-    uint  baseInstance;
-    */
 
 layout(binding = TRANSLUCENT_DISTANCE_BUFFER_BINDING, std430) restrict buffer TranslucentCommandCount {
     uint[] translucentCommandData;
@@ -81,7 +74,6 @@ void main() {
         positionBuffer[drawId] = extractRawPos(meta);
         uvec4 counts = meta.b;
 
-        //TODO implicit command merging
         uint msk = 0;
         msk |= uint(((counts.y      &0xFFFFu)!=0) && (relative.y>-1))<<0;
         msk |= uint((((counts.y>>16)&0xFFFFu)!=0) && (relative.y<1 ))<<1;
@@ -101,7 +93,6 @@ void main() {
             tCmdPtr = atomicAdd(temporalOpaqueDrawCount, cmdCnt) + TEMPORAL_OFFSET;
         }
 
-        //TODO: make totalQuads also have temporal amount
         #ifdef HAS_STATISTICS
         uint totalQuads = 0;
         #endif

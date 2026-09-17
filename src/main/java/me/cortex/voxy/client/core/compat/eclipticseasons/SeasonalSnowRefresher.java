@@ -20,22 +20,6 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
-//Re-decides seasonal snow over LOD that is already in the store, writing complement ids back
-//into the voxels. SeasonalMeshView is the mesh-time path: it judges the season per remesh and
-//never writes the store. This walker exists to normalise archives that still carry ingest-time
-//complement ids, and running it puts CURRENT-season complements into storage that the mesh view
-//then has to decode past (harmless, decode is idempotent, but storage is then not season
-//neutral).
-//TODO: make this decode-only - strip complements instead of re-deciding them
-//
-//In those archives a snow-covered block is stored as the complement of its own id - the sentinel
-//is in the voxel itself; distant LOD is never re-ingested, so it keeps whichever season it was
-//stored under. Walking the store is what reaches it: region files exist
-//only in singleplayer, so anything that reads those is dead weight on a server.
-//
-//The write is kept narrow: only the 20-bit block id, and only between a state and its own complement.
-//Light, biome and air-ness are never touched, so nothing structural changes and a block-level dirty
-//mark is all a section needs afterwards.
 public final class SeasonalSnowRefresher {
     private static final int MAX_BLOCK_ID = 1048575;
     private static final long BLOCK_ID_MASK = ((1L << 20) - 1) << 27;
@@ -167,14 +151,6 @@ public final class SeasonalSnowRefresher {
             boolean snowyTree = CommonConfig.Snow.snowyTree.get();
 
             LongArrayList keys = new LongArrayList();
-            //Level 0 only. Ingest decides snow at level 0 and mips upward, and every Mipper path returns
-            //one of its children verbatim - so a parent's snow state is whichever child it picked, not an
-            //independent decision. Re-deciding at level N against level-N neighbours would disagree with
-            //the level 0 underneath it; the parents are followed below instead.
-            //Collect first: the storage iterator holds a cursor open, and acquiring or writing sections
-            //underneath it is not something the backend promises to survive. The walk holds a world
-            //reference throughout, and the shutdown that waits on that reference does not time out, so
-            //this loop needs its own way out - hence the throw.
             try {
                 engine.storage.iteratePositions(0, key -> {
                     if (run.cancelled || Thread.currentThread().isInterrupted()
@@ -190,9 +166,6 @@ public final class SeasonalSnowRefresher {
             status = "scanning " + keys.size() + " sections";
 
             for (int i = 0; i < keys.size(); i++) {
-                //The held reference makes world teardown wait for this walk, so the walk has to be the
-                //one that notices shutdown - otherwise it is the thing the quiescence check waits on
-                //forever. Checked per section, so the wait is one section long at worst.
                 if (run.cancelled || !engine.isLive() || Thread.currentThread().isInterrupted()
                         || (engine.instanceIn != null && !engine.instanceIn.isRunning())) {
                     break;
@@ -263,11 +236,6 @@ public final class SeasonalSnowRefresher {
             return 0;
         }
 
-        //A loaded chunk is ingest's business - it asks the season API directly, and racing that here
-        //would replace a fresher answer with a guess. But a level 0 section spans 2x2 chunks, and
-        //skipping the whole section when any one of them is loaded leaves the quadrants around the
-        //render-distance edge with no writer at all: too far to be re-ingested, permanently skipped
-        //here, and the band moves with the player. Skip by quadrant instead.
         int chunkX = section.x << 1;
         int chunkZ = section.z << 1;
         boolean[] quadrantLoaded = {
@@ -358,17 +326,6 @@ public final class SeasonalSnowRefresher {
         return changed;
     }
 
-    //Bring the levels above this section back in line with the level 0 data just edited.
-    //
-    //Ingest only decides snow at level 0 and mips upward, so a parent voxel shows snow exactly when the
-    //child the mip selected did - which means the mip has to be rerun to know, not guessed at from the
-    //children's block ids. Rebuilding the pyramid from this section's own voxels is self-contained: a
-    //level 4 voxel spans 16 blocks, so every child of every parent covering this section is inside its 32.
-    //
-    //Only the snow bit is carried across. Where the recomputed voxel disagrees with the stored one about
-    //anything else, the stored one is ingest's and is left alone.
-    //One set of pyramid buffers per walker thread - ~37KiB that a pass rewriting thousands of sections
-    //would otherwise allocate for each of them.
     private static final ThreadLocal<long[][]> MIP_SCRATCH = ThreadLocal.withInitial(() -> {
         long[][] levels = new long[WorldEngine.MAX_LOD_LAYER][];
         int side = SECTION_WIDTH;
@@ -506,9 +463,6 @@ public final class SeasonalSnowRefresher {
             return NO;
         }
 
-        //A biome the store remembers but this world cannot resolve is not evidence of no snow. Treating
-        //it as such would strip snow, persist that, push it up the levels and cache the failure for the
-        //whole pass - and only a re-ingest could ever put it back. Leave the voxel exactly as it is.
         Holder<Biome> biome = biomes.get(biomeId);
         if (biome == null) {
             return UNKNOWN;
@@ -518,10 +472,6 @@ public final class SeasonalSnowRefresher {
                 state.getSeed(pos), pos) ? YES : NO;
     }
 
-    //getBiomeEntries copies the whole table under a lock, and resolving a biome key allocates and hits
-    //the registry twice. Both answer to a 9-bit id, so both are worth doing once per id per pass -
-    //including the failures, so a biome the store remembers but the world no longer has cannot throw
-    //once per voxel.
     private static final class BiomeCache {
         private final Level level;
         private final Mapper.BiomeEntry[] entries;

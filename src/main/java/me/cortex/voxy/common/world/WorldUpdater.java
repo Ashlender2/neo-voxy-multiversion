@@ -7,10 +7,8 @@ import me.cortex.voxy.commonImpl.VoxyCommon;
 import static me.cortex.voxy.common.world.WorldEngine.*;
 
 public class WorldUpdater {
-    //Executes an update to the world and automatically updates all the parent mip layers up to level 4 (e.g. where 1 chunk section is 1 block big)
 
-    //NOTE: THIS RUNS ON THE THREAD IT WAS EXECUTED ON, when this method exits, the calling method may assume that VoxelizedSection is no longer needed
-    public static void insertUpdate(WorldEngine into, VoxelizedSection section) {//TODO: add a bitset of levels to update and if it should force update
+    public static void insertUpdate(WorldEngine into, VoxelizedSection section) {
 
         //Do some very cheeky stuff for MiB
         if (VoxyCommon.IS_MINE_IN_ABYSS) {
@@ -47,7 +45,6 @@ public class WorldUpdater {
             }
 
             if (didStateChange||(emptinessStateChange!=0)) {
-                //TODO: somehow foward the neighbors that are facing the updated area, this allows forwarding to the dirty consumer
                 // which can decide wether to dispatch mesh rebuilds to the surounding sections
                 //Bitmask of neighboring sections
                 //Note, this may be zero (this is more likely to occure at higher lod levels) if it doesnt face any neighbors
@@ -108,12 +105,7 @@ public class WorldUpdater {
         boolean belowDidStateChange = false;
 
 
-        //TODO: remove the nonAirCountDelta stuff if level != 0
 
-        //A uniform section being written with values that all equal its uniform value changes nothing,
-        //so it can stay uniform and skip both the 256KiB materialise and the write loop. This is the
-        //common ingest case: whole sections of air above the terrain (the ingest service even has a
-        //uniformAir fast path feeding straight into here). Compare first, materialise only if needed.
         {
             long[] existing = worldSection._rawOrNull();
             if (existing == null) {
@@ -141,10 +133,6 @@ public class WorldUpdater {
         }
 
         {//Do a bunch of funny math
-            //Writing differing voxels, so a real array is needed. materialize() fills it with the
-            //uniform value first, so the pre-existing contents are preserved exactly and the
-            //nonEmptyBlockCount bookkeeping below is unchanged. Must re-read: never reuse a hoisted
-            //null, or every write would land in an orphan array and the whole ingest would vanish.
             var secD = worldSection.materialize();
             int baseSec = bx | (bz << 5) | (by << 10);
             if (lvl == 0) {
@@ -153,7 +141,6 @@ public class WorldUpdater {
 
                 int secIdx = 0;
 
-                //TODO rotate the loop parralelization
                 // i.e. instead of doing 4 consecutive blocks, which would all be in the same cache line
                 // do 4 seperate rows so they are in different cache lines, should allow
                 // more instruction pipelining (in theory)
@@ -179,7 +166,6 @@ public class WorldUpdater {
                 int iSecMsk1 = (~secMsk) + 1;
 
                 int secIdx = 0;
-                //TODO: manually unroll and do e.g. 4 iterations per loop
                 for (int i = baseVIdx; i <= (0xFFF >> (lvl * 3)) + baseVIdx; i++) {
                     int cSecIdx = secIdx + baseSec;
                     secIdx = (secIdx + iSecMsk1) & secMsk;

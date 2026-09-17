@@ -1,5 +1,15 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.4.11（1.21.1 NeoForge 联动版）— 2026-09-17
+
+### 简体中文
+
+- 清理失效源码与注释代码，精简源码注释，并将 README 拆分为原版功能和 Mod 联动表格。
+
+### English
+
+- Removed disabled source and commented-out code, simplified comments, and split the README into vanilla-feature and mod-integration tables.
+
 ## 0.4.10（1.21.1 NeoForge 联动版）— 2026-09-16
 
 ### 简体中文

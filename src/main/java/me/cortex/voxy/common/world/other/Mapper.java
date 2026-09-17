@@ -145,7 +145,6 @@ public class Mapper {
     }
 
     private void loadFromStorage() {
-        //TODO: FIXME: have/store the minecraft version the mappings are from (the data version)
         // SharedConstants.getGameVersion().dataVersion().id()
         // then use this to create an update path instead
 
@@ -274,14 +273,12 @@ public class Mapper {
         buffer.rewind();
         this.storage.putIdMapping(entry.id | (BIOME_TYPE<<30), buffer);
         MemoryUtil.memFree(buffer);
-        //this.storage.flush();
 
         if (this.newBiomeCallback!=null)this.newBiomeCallback.accept(entry);
         return entry;
     }
 
 
-    //TODO:FIXME: IS VERY SLOW NEED TO MAKE IT LOCK FREE, or at minimum use a concurrent map
     public long getBaseId(byte light, BlockState state, Holder<Biome> biome) {
         if (state.isAir()) return Byte.toUnsignedLong(light) <<56;//Special case and fast return for air, dont care about the biome
         return composeMappingId(light, this.getIdForBlockState(state), this.getIdForBiome(biome));
@@ -291,9 +288,6 @@ public class Mapper {
         return this.stateEntryForRenderId(blockId).state;
     }
 
-    //Stored voxel data outlives the compat that wrote it: archives ingested with the seasonal
-    //snow remapper hold complement ids forever (WorldUpdater only heals revisited chunks), so
-    //this decode is unconditional, not gated on the mod being present.
     private StateEntry stateEntryForRenderId(int blockId) {
         if (blockId < this.blockId2stateEntry.size()) {
             return this.blockId2stateEntry.get(blockId);
@@ -387,7 +381,6 @@ public class Mapper {
         return (Byte.toUnsignedLong(light)<<56)|(Integer.toUnsignedLong(biomeId) << 47)|(Integer.toUnsignedLong(blockId)<<27);
     }
 
-    //TODO: fixme: synchronize access to this.blockId2stateEntry
     public StateEntry[] getStateEntries() {
         this.blockLock.lock();
         var set = new ArrayList<>(this.blockId2stateEntry);
@@ -403,7 +396,6 @@ public class Mapper {
         return out;
     }
 
-    //TODO: fixme: synchronize access to this.biomeId2biomeEntry
     public BiomeEntry[] getBiomeEntries() {
         this.biomeLock.lock();
         var set = new ArrayList<>(this.biomeId2biomeEntry);

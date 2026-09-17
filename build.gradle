@@ -12,28 +12,6 @@ base {
     archivesName = project.archives_base_name
 }
 
-//Sources targeting APIs this build does not have: Fabric-only mods, and vanilla/Sodium members that
-//do not exist here. The Sodium options page is instead driven through SodiumOptionsAPI.
-sourceSets {
-    main {
-        java {
-            exclude 'me/cortex/voxy/client/config/IConfigPageSetter.java'
-            exclude 'me/cortex/voxy/client/config/ModMenuIntegration.java'
-            exclude 'me/cortex/voxy/client/config/VoxySodiumOptions.java'
-            exclude 'me/cortex/voxy/client/mixin/sodium/MixinVideoSettingsScreen.java'
-            exclude 'me/cortex/voxy/client/mixin/nvidium/**'
-            exclude 'me/cortex/voxy/commonImpl/mixin/chunky/**'
-
-            //DebugScreenEntry and GlDebug are not public API here, and BlockableEventLoop lost
-            //isNonRecoverable, so its mixin has no target.
-            exclude 'me/cortex/voxy/client/VoxyDebugScreenEntry.java'
-            exclude 'me/cortex/voxy/client/mixin/minecraft/MixinDebugScreenEntryList.java'
-            exclude 'me/cortex/voxy/client/mixin/minecraft/MixinGlDebug.java'
-            exclude 'me/cortex/voxy/client/mixin/minecraft/MixinBlockableEventLoop.java'
-        }
-    }
-}
-
 repositories {
     maven {
         name = 'LocalBuildBootstrap'
@@ -70,7 +48,6 @@ repositories {
         }
     }
 
-    // Forgified Fabric API for NeoForge
     maven {
         name = "Sinytra"
         url = "https://maven.su5ed.dev/releases"
@@ -133,17 +110,12 @@ processResources {
         expand "version": version, "commit": hash, "buildtime": time
     }
 
-    // Exclude leftover Fabric metadata from NeoForge build
     exclude 'fabric.mod.json'
     exclude 'voxy.accesswidener'
 }
 
 neoForge {
     version = project.neoforge_version
-
-    // Validate access transformers at build time to catch invalid targets
-    // Temporarily disabled to debug build issue
-    // validateAccessTransformers = true
 
     accessTransformers {
         file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -585,7 +557,6 @@ build.dependsOn validateMixins                   // After JAR creation (content 
 
 
 // NeoForge: makeExcludedRocksDB and processIncludeJars are Fabric Loom specific - removed
-// TODO: Implement NeoForge equivalent for RocksDB filtering if needed
 /*
 tasks.register('makeExcludedRocksDB', Zip) {
     archiveExtension.set("jar")
@@ -623,7 +594,6 @@ processIncludeJars {
 */
 
 // NeoForge: remapJar is handled by NeoGradle automatically
-// TODO: Re-implement git hash classifier for NeoForge jar task
 /*
 remapJar {
     doFirst {

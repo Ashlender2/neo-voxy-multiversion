@@ -60,9 +60,6 @@ public class VoxelIngestService {
             var vs = SECTION_CACHE.get().setPosition(task.cx, task.cy, task.cz);
 
             if (section.hasOnlyAir() && task.blockLight==null && task.skyLight==null) {//If the chunk section has lighting data, propagate it
-                //All-air sections with no light data are treated as above-surface sky (vanilla stores no
-                //DataLayer there; chunk senders push exactly this shape for the sections they skip). Zero-lit
-                //air would black out neighbor-lit surfaces at the higher lod levels.
                 WorldUpdater.insertUpdate(task.world, vs.uniformAir(me.cortex.voxy.common.world.other.Mapper.airWithLight(0x0F)));
             } else {
                 VoxelizedSection csec = WorldConversionFactory.convert(
@@ -147,7 +144,6 @@ public class VoxelIngestService {
             i++;
             if (section == null || !shouldIngestSection(section, chunk.getPos().x, i, chunk.getPos().z)) continue;
             allEmpty&=section.hasOnlyAir();
-            //if (section.isEmpty()) continue;
             var pos = SectionPos.of(chunk.getPos(), i);
             if (lightingProvider.getDebugSectionType(LightLayer.SKY, pos) != LayerLightSectionStorage.SectionType.LIGHT_AND_DATA && lightingProvider.getDebugSectionType(LightLayer.BLOCK, pos) != LayerLightSectionStorage.SectionType.LIGHT_AND_DATA)
                 continue;
@@ -186,7 +182,6 @@ public class VoxelIngestService {
         for (var section : chunk.getSections()) {
             i++;
             if (section == null || !shouldIngestSection(section, chunk.getPos().x, i, chunk.getPos().z)) continue;
-            //if (section.isEmpty()) continue;
             var pos = SectionPos.of(chunk.getPos(), i);
 
             var bl = blp.getDataLayerData(pos);
@@ -208,14 +203,11 @@ public class VoxelIngestService {
             }
 
             //If its null for either, assume failure to obtain lighting and ignore section
-            //if (blNone && slNone) {
-            //    continue;
-            //}
             engine.acquireRef();
             this.ingestQueue.add(new IngestSection(
                     chunk.getPos().x, i, chunk.getPos().z, engine, chunk,
                     domumBlockEntities.forSection(i), section, bl, sl,
-                    littleTiles == null ? null : littleTiles.section(i)));//TODO: fixme, this is technically not safe todo on the chunk load ingest, we need to copy the section data so it cant be modified while being read
+                    littleTiles == null ? null : littleTiles.section(i)));
             try {
                 this.service.execute();
             } catch (Exception e) {
@@ -275,23 +267,10 @@ public class VoxelIngestService {
         }
     }
 
-    //Sections that arrive without an owning chunk - VSS streams them from the server, so the client has
-    //no LevelChunk and no block entities to read. This signature is what VSS 0.2.8 resolves by reflection
-    //to install its column consumer; it registers the consumer inside the same try as the lookup, so the
-    //lookup failing takes the whole server-fed ingest path with it rather than just this call.
     public static boolean rawIngest(WorldIdentifier id, LevelChunkSection section, int x, int y, int z, DataLayer bl, DataLayer sl) {
         return rawIngest(id, recoverChunk(id, x, z), section, x, y, z, bl, sl);
     }
 
-    //The variant compats read a section's block entities to re-register Domum and copycat materials, and
-    //bail with no chunk - so a section arriving without one publishes plain block ids OVER voxels that
-    //already carried their dressing, and that write goes to disk. A server-fed section is not required
-    //to be a chunk the client lacks: the sender covers a radius that overlaps what is loaded here.
-    //
-    //The dimension key is checked rather than assuming the client is where the section is for. This pack
-    //runs sable sub-levels and generated mirror_* dimensions, so the active level is often not the one an
-    //engine belongs to, and a chunk fetched from the wrong level would decorate with the wrong materials.
-    //No match, or nothing loaded there, leaves the chunk null and the section undressed - what it was.
     private static LevelChunk recoverChunk(WorldIdentifier id, int chunkX, int chunkZ) {
         if (id == null) {
             return null;
@@ -307,9 +286,6 @@ public class VoxelIngestService {
         }
     }
 
-    //The owning chunk has to come along: the variant compats (Domum, Create copycats) read the section's
-    //block entities in beginSection to re-register their materials, and with a null chunk they bail, so a
-    //re-ingest through here would republish the section stripped of its dressing.
     public static boolean rawIngest(WorldIdentifier id, LevelChunk chunk, LevelChunkSection section, int x, int y, int z, DataLayer bl, DataLayer sl) {
         if (id == null) return false;
         var engine = id.getOrCreateEngine();
@@ -325,7 +301,7 @@ public class VoxelIngestService {
             me.cortex.voxy.commonImpl.PerfStats.sectionIngestedWithChunk.increment();
         }
         if (engine.instanceIn == null) return false;
-        if (!engine.instanceIn.isIngestEnabled(null)) return false;//TODO: dont pass in null
+        if (!engine.instanceIn.isIngestEnabled(null)) return false;
         return engine.instanceIn.getIngestService().rawIngest0(engine, chunk, section, x, y, z, bl, sl);
     }
 }

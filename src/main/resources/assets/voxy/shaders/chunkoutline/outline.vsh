@@ -40,11 +40,9 @@ void main() {
 
     ivec3 cubeCornerI = ivec3(gl_VertexID&1, (gl_VertexID>>2)&1, (gl_VertexID>>1)&1)*16;
     //Expand the y height to be big (will be +- 8192)
-    //TODO: make it W.R.T world height and offsets
     //cubeCornerI.y = cubeCornerI.y*1024-512;
     gl_Position = MVP * vec4(vec3(cubeCornerI+origin), 1);
 
-    //TODO: FIXME with reverse z need tobe + not -
     gl_Position.z += CLOSER_SIGN*0.0005f;//Bring closer to camera
 
     #ifdef TAA

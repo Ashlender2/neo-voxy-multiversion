@@ -207,10 +207,6 @@ public final class DomumDistantRenderer implements LodPipelineHooks.Renderer {
 
         this.sections.put(key, new Entry(pairs));
 
-        // A section normally reaches this method at exactly the vanilla/LOD handoff. Waiting for
-        // the coarse camera rescan leaves a visible gap while walking away; approaching works only
-        // because that mesh was already cached. Queue the newly persisted section immediately,
-        // while keeping actual GPU uploads limited by MAX_BAKES_PER_TICK.
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == this.level) {
             var camera = mc.gameRenderer.getMainCamera().getPosition();

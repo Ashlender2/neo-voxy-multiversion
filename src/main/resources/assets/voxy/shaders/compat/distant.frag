@@ -40,9 +40,6 @@ void main() {
         discard;
     }
     #ifdef PATCHED_SHADER
-    //Shader packs light voxy geometry themselves (directional sky light etc.); pre-multiplying the
-    //vanilla face shade here double-darkens - visible as black undersides on floating track spans.
-    //The tint rides the parameters' tinting slot, same as LOD terrain's biome colour.
     #ifndef TRANSLUCENT
     colour.a = 1.0;
     #endif
@@ -50,9 +47,6 @@ void main() {
             vec4(fColor.rgb, 1.0), fCustomId));
     #else
     vec3 light = texture(uLightMap, fLightUv).rgb;
-    //Alpha is the LOD metadata byte SSAO decodes (face = bits 0-2, hasAO = bit 6): emit the real
-    //face with hasAO clear. An opaque 1.0 here reads back as face=7, whose normal is vec3(0), and
-    //BETTER_SSAO then normalize()s it - NaN-darkened mesh pixels.
     #ifdef TRANSLUCENT
     outColour = vec4(colour.rgb * fColor.rgb * light * fShade, colour.a);
     #else

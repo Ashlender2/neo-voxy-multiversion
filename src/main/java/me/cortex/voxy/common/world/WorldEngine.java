@@ -94,7 +94,6 @@ public class WorldEngine {
 
     public static final int POS_FORMAT_VERSION = 1;
 
-    //TODO: Fixme/optimize, cause as the lvl gets higher, the size of x,y,z gets smaller so i can dynamically compact the format
     // depending on the lvl, which should optimize colisions and whatnot
     public static long getWorldSectionId(int lvl, int x, int y, int z) {
         return ((long)lvl<<60)|((long)(y&0xFF)<<52)|((long)(z&((1<<24)-1))<<28)|((long)(x&((1<<24)-1))<<4);//NOTE: 4 bits spare for whatever
@@ -192,7 +191,6 @@ public class WorldEngine {
         if (this.refCount.decrementAndGet()<0) {
             throw new IllegalStateException("ref count less than 0");
         }
-        //TODO: maybe dont need to tick the last active time?
         this.lastActiveTime = System.currentTimeMillis();
     }
 

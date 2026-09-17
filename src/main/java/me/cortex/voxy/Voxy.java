@@ -24,9 +24,6 @@ public class Voxy {
     private final me.cortex.voxy.compat.far.FarEntityService farEntityService = new me.cortex.voxy.compat.far.FarEntityService();
 
     public Voxy(IEventBus modEventBus, ModContainer container) {
-        //Terrain streaming is handled by the external VSS mod; on a dedicated server voxy only
-        //provides the sable contraption ticket hook (MixinServerLevel) and, with Create installed,
-        //the distant-train pose sampler. Everything else is client side.
 
         //Far players / ridden vehicles: server samples player snapshots, client renders lightweight
         //proxies past the entity view distance
@@ -58,9 +55,6 @@ public class Voxy {
             // Voxy's Sodium video-settings page is registered by VoxyConfigMenu (@ConfigEntryPointForge,
             // Sodium 0.8 native config API), not here.
 
-            // EclipticSeasons compat: rebuild the LOD renderer on season change. Gated on the same
-            // presence-and-version check as the mesh view (the handler references EclipticSeasons
-            // client classes, and a handler without a view would rebuild for nothing).
             if (me.cortex.voxy.client.core.compat.eclipticseasons.EsCompatGate.shouldArm()) {
                 NeoForge.EVENT_BUS.register(me.cortex.voxy.client.core.compat.eclipticseasons.VoxyEsHandler.INSTANCE);
             }
@@ -74,9 +68,6 @@ public class Voxy {
                 //Bogey snapshot capture touches Create's registries, so it stays behind this gate
                 me.cortex.voxy.client.compat.create.DistantTrainRenderer.bogeyMeshProvider =
                         me.cortex.voxy.client.compat.create.DistantBogeyMeshes::getOrCapture;
-                //Track LOD reads the client-synced TrackGraph directly, so it needs Create present.
-                //Create's bezier BEs are clamped to the view distance by MixinTrackRenderer so they
-                //hand their distant spans to this renderer instead of floating past the LOD.
                 var trackRenderer = new me.cortex.voxy.client.compat.create.DistantTrackRenderer();
                 NeoForge.EVENT_BUS.register(trackRenderer);
                 me.cortex.voxy.client.compat.LodPipelineHooks.register(trackRenderer);

@@ -46,11 +46,6 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
         bitsNBobsInstalled = isLoadedEarly("bits_n_bobs");
         azimuthInstalled = isLoadedEarly("azimuth");
 
-        //Second line of defence behind the mods.toml incompatible declaration: if load ordering
-        //ever lets that mod's mixins prepare before FML's dependency check fires, the crash report
-        //blames voxy internals ("@Mixin target was not found: ...GeometryCache") with no hint of
-        //the real culprit - this log line is the hint. The LoadingModList probe is safe this
-        //early on either dist.
         if (isLoadedEarly("eclipticseasons_voxycompact")) {
             org.slf4j.LoggerFactory.getLogger("voxy").error(
                     "eclipticseasons_voxycompact detected: it targets the OFFICIAL voxy's internal"
@@ -83,10 +78,6 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
             mixins.add("sodium.MixinDefaultChunkRenderer");
         }
 
-        //Distance-cull Create's distant track rendering so it hands over to the LOD copy instead of
-        //floating past the view distance (references Create + Flywheel classes). MixinTrackVisual is
-        //the real fix under Flywheel (default + iris/colorwheel); MixinTrackRenderer covers the
-        //vanilla-BER fallback path when the Flywheel backend is off.
         if (createInstalled) {
             mixins.add("create.MixinTrackRenderer");
             mixins.add("create.MixinTrackVisual");
@@ -97,11 +88,6 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
             mixins.add("create.MixinStationRenderer");
             mixins.add("create.MixinContraptionEntityRenderer");
             mixins.add("create.MixinContraptionVisual");
-            //Placed kinetic machine blocks: their Flywheel moving parts (rotating shafts/cogs/machine
-            //animations) have no distance limit and float over LOD past the render distance. These cull
-            //them there - KineticBlockEntityVisual takes the shaft/cog/belt/fan family via a base beginFrame,
-            //MachineVisuals the ones that override it, the Renderer the backend-off BER; the accessor
-            //feeds `pos`.
             mixins.add("create.AccessorAbstractBlockEntityVisual");
             mixins.add("create.AccessorAbstractVisualLevel");
             mixins.add("create.MixinKineticBlockEntityVisual");
@@ -139,11 +125,6 @@ public class ClientVoxyMixinPlugin implements IMixinConfigPlugin {
             mixins.add("simulated.MixinAbstractLaserRenderer");
         }
 
-        // EclipticSeasons seasonal LOD: the mesh-time view, id decode and bake hooks are direct
-        // code in Mapper/ModelFactory/SoftwareModelTextureBakery/RenderDataFactory, formed behind
-        // SeasonalLod.view. The only mixin here is the ClientLevel tick poll that drives the
-        // stored-snow refresher (config-gated, off by default). Client-gated because
-        // VoxyTool references EclipticSeasons client classes (ClientCon).
         if (eclipticSeasonsInstalled && FMLLoader.getDist() == Dist.CLIENT) {
             mixins.add("eclipticseasons.MixinClientLevel");
         }

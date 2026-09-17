@@ -49,9 +49,6 @@ float getReduce4x4(ivec2 pos) {//w.r.t mip_2
     return ret;
 }
 
-//This is where the funny happens
-// since we swizzeled the id when getting the value, our ordering within the subgroup should be z ordered
-// we sadly cannot use the full subgroup reduction as wave size is 32 and we need a square pow2 values, so 16, sad beep
 float getReduceWave(ivec2 pos, float value) {
     float reduced;
     subgroupBarrier();//Wait for active threads in subgroup

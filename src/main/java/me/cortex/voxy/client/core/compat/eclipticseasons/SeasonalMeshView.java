@@ -34,12 +34,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-//The mesh-time seasonal view: stored voxels stay season neutral, and each remesh judges snow
-//cover, frozen water and seasonal models against the CURRENT solar term, swapping in render-only
-//ids from SeasonalIdSpace. Judgements run per voxel on mesh workers (the sodium builder threads
-//included when job stealing is on), so the caches below are keyed per Mapper - block and biome
-//ids are per world engine, and a shared table would hand one dimension's verdicts to another -
-//and are snapshotted into a per-call Ctx so the hit path is a plain array read with no monitor.
 public class SeasonalMeshView implements SeasonalLod.View {
     private static final ThreadLocal<RandomSource> RANDOM =
             ThreadLocal.withInitial(RandomSource::createNewThreadLocalInstance);
@@ -66,9 +60,6 @@ public class SeasonalMeshView implements SeasonalLod.View {
         synchronized (BIOME_CACHES) { BIOME_CACHES.clear(); }
     }
 
-    //Everything a per-voxel judgement needs, resolved once per section call: the cache snapshots
-    //(refreshed by the miss paths when they grow the shared arrays) and the config reads, which
-    //are ModConfigSpec lookups too slow to sit on a 32768-iteration loop
     private static final class Ctx {
         Level level;
         Mapper mapper;
@@ -165,9 +156,6 @@ public class SeasonalMeshView implements SeasonalLod.View {
         return resolved;
     }
 
-    //Dimensions outside ES's whitelist (nether, the end, custom and mirror worlds) tick
-    //nowSolarTerm to NONE and show no seasons at close range; the LOD must agree, and skipping
-    //here also spares the 32768-voxel scan in every section of those dimensions
     private static boolean seasonInactive() {
         var term = ClientCon.nowSolarTerm;
         return term == null || term == SolarTerm.NONE;
@@ -255,11 +243,6 @@ public class SeasonalMeshView implements SeasonalLod.View {
         }
     }
 
-    //Slices are indexed h|(y<<5) (acquireNeighborData); the in-slice voxel one above is i+32.
-    //The top row (y==31) is left as stored - its above-voxel lives in a diagonal section - and
-    //the +-y slices are skipped entirely: a voxel with a block directly above it can neither
-    //freeze nor carry snow, so a -y-slice substitution could never change anything the culler
-    //sees, and the +y slice has no above data at all.
     @Override
     public void substituteLateralSlices(WorldEngine world, WorldSection section,
                                         long[] neighborFaces, int neighborMsk) {
@@ -413,12 +396,6 @@ public class SeasonalMeshView implements SeasonalLod.View {
 
     @Override
     public boolean isSeasonalConstantTint(BlockState state, Object colourProvider) {
-        //ES recolours through providers that never call getBlockTint: the hardwired
-        //birch/spruce/mangrove trio and every data-driven SeasonalColorOverrides entry register a
-        //FoliageColorSource (or its Impl). MixinBlockColors can also rewrite the vanilla lambdas
-        //for the trio in place, which an instanceof cannot see - hence the block identity check
-        //stays alongside the provider check. Over-marking a leaf that is genuinely biome
-        //dependent is harmless - it was headed for the per-biome colour rows anyway.
         return colourProvider instanceof FoliageColorSource
                 || colourProvider instanceof FoliageColorSource.Impl
                 || state.is(Blocks.BIRCH_LEAVES) || state.is(Blocks.SPRUCE_LEAVES)

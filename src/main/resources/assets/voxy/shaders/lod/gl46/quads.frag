@@ -12,9 +12,7 @@
 layout(binding = 0) uniform sampler2D blockModelAtlas;
 layout(binding = 2) uniform sampler2D depthTex;
 
-//#define DEBUG_RENDER
 
-//TODO: need to fix when merged quads have discardAlpha set to false but they span multiple tiles
 // however they are not a full block
 
 layout(location = 0) in flat uvec4 interData;
@@ -62,10 +60,6 @@ vec4 clearTintMaskFromColour(vec4 colour) {
     colour.a = alpha / 255.0;
     return colour;
 }
-
-//bool useMipmaps() {
-//    return (interData.x&2u)==0u;
-//}
 
 uint tintingState() {
     return (interData.x>>2)&3u;
@@ -138,7 +132,6 @@ vec2 getBaseUV() {
 
 #ifdef PATCHED_SHADER
 struct VoxyFragmentParameters {
-    //TODO: pass in derivative data
     vec4 sampledColour;
     vec2 tile;
     vec2 uv;
@@ -175,13 +168,6 @@ void main() {
         discard;
         return;
     }
-    // Partial/cutout/translucent vanilla models leave holes in the source depth buffer. Stencil alone
-    // would let their simplified LOD proxy show through those holes even deep inside the vanilla area.
-    // Clip geometrically at the exact 3-D fade start, then allow every model to fill the real transition.
-    // Water is exempt because it deliberately retains its independent translucent chunk boundary.
-    // Leaves retain the per-pixel depth/stencil ownership handoff. Applying either the circular
-    // geometry cutoff or Sodium's coarse section-AABB mask removes the LOD canopy before the
-    // matching vanilla cutout pixels exist, producing a blocky transparent shell while approaching.
     if (circularLodBoundaryEnabled > 0.5
             && !useIndependentWaterBoundary()
             && !useOriginalLeafHandoff()
@@ -189,7 +175,6 @@ void main() {
         discard;
         return;
     }
-    //vec2 uv = vec2(0);
     //Tile is the tile we are in
     vec2 tile;
     #ifdef USE_NV_BARRY
@@ -209,8 +194,6 @@ void main() {
     vec2 uv2 = localUV*(1.0/(vec2(3.0,2.0)*256.0));
     vec4 colour;
     vec2 texPos = uv2 + getBaseUV();
-//This is deprecated, TODO: remove the non mip code path
-    //if (useMipmaps())
     {
         vec2 uvSmol = uv*(1.0/(vec2(3.0,2.0)*256.0));
         vec2 dx = dFdx(uvSmol);//vec2(lDx, dDx);
@@ -235,18 +218,15 @@ void main() {
         }
     }// else {
     //    colour = textureLod(blockModelAtlas, texPos, 0);
-    //}
 
     //If we are in shaders and are a helper invocation, just exit, as it enables extra performance gains for small sized
     // fragments, we do this here after derivative computation
     //Trying it with all shaders
-    //#ifdef PATCHED_SHADER
     #ifndef PATCHED_SHADER_ALLOW_DERIVATIVES
     if (gl_HelperInvocation) {
         return;
     }
     #endif
-    //#endif
 
     if (any(notEqual(clamp(tile, vec2(0), vec2((interData.x>>8)&0xFu, (interData.x>>12)&0xFu)), tile))) {
         discard;
@@ -259,9 +239,6 @@ void main() {
     #ifdef TRANSLUCENT
     const bool useChunkBounds = true;
     #else
-    // The section-AABB depth mask is the legacy handoff only when circular ownership is disabled.
-    // Do not re-enable it per material: it describes whole visible Sodium sections, not real leaf
-    // pixels, and combining it with the circular stencil creates a second, mismatched cutoff.
     bool useChunkBounds = circularLodBoundaryEnabled < 0.5;
     #endif
     if (useChunkBounds) {
@@ -285,8 +262,6 @@ void main() {
     #else
     if (textureLod(blockModelAtlas, texPos, 0).a == 0.0f) {
     #endif
-        //This is stupidly stupidly bad for divergence
-        //TODO: FIXME, basicly what this do is sample the exact pixel (no lod) for discarding, this stops mipmapping fucking it over
         #ifndef DEBUG_RENDER
         discard;
         return;
@@ -334,29 +309,7 @@ void main() {
 
 
 
-//#ifdef GL_KHR_shader_subgroup_quad
-/*
-uint hash = (uint(tile.x)*(1<<16))^uint(tile.y);
-uint horiz = subgroupQuadSwapHorizontal(hash);
-bool sameTile = horiz==hash;
-uint sv = mix(uint(-1), hash, sameTile);
-uint vert = subgroupQuadSwapVertical(sv);
-sameTile = sameTile&&vert==hash;
-mipBias = sameTile?0:-5.0;
-*/
-/*
-vec2 uvSmol = uv*(1.0/(vec2(3.0,2.0)*256.0));
-float lDx = subgroupQuadSwapHorizontal(uvSmol.x)-uvSmol.x;
-float lDy = subgroupQuadSwapVertical(uvSmol.y)-uvSmol.y;
-float dDx = subgroupQuadSwapDiagonal(lDx);
-float dDy = subgroupQuadSwapDiagonal(lDy);
-vec2 dx = vec2(lDx, dDx);
-vec2 dy = vec2(lDy, dDy);
-colour = textureGrad(blockModelAtlas, texPos, dx, dy);
-*/
-//#else
 //colour = texture(blockModelAtlas, texPos);
-//#endif
 
 //Undefine the depth stuff
 #import <voxy:util/depthutils.glsl>

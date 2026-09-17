@@ -21,7 +21,7 @@ vec4 getFaceSize(uint faceData) {
 }
 
 
-vec2 taaOffset = vec2(0);//TODO: compute this
+vec2 taaOffset = vec2(0);
 
 struct QuadData {
     uvec4 attributeData;
@@ -88,7 +88,6 @@ uvec3 makeRemainingAttributes(const in BlockModel model, const in Quad quad, uin
     #else
     bool isTranslucent = modelIsTranslucent(model);
 
-    //afak, these are the same variable in vanilla, (i.e. shaded == ao)
     bool isShaded = modelIsShaded(model);
     bool hasAO = isShaded;
 

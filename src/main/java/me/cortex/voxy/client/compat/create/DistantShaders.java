@@ -15,10 +15,6 @@ import static org.lwjgl.opengl.GL20C.nglUniformMatrix4fv;
 import static org.lwjgl.opengl.GL33C.glBindSampler;
 import static org.lwjgl.opengl.GL45C.glBindTextureUnit;
 
-//Programs and binding helpers for the distant mesh pipeline. Compiled lazily on the render thread.
-//On the iris pipeline the fragment shader gets the shader pack's voxy patch appended
-//(patchOpaqueShader), so our fragments write the full g-buffer exactly like LOD terrain - the
-//shader pack's existing voxy support covers us with no per-pack work.
 public final class DistantShaders {
     private static Shader vertexLight;
     private static Shader uniformLight;
@@ -35,11 +31,6 @@ public final class DistantShaders {
 
     private DistantShaders() {}
 
-    //Compile both patched variants up front. glLinkProgram blocks the render thread for hundreds of
-    //milliseconds on some drivers, and compiling lazily meant that landed mid-gameplay, the first time
-    //a distant train/track/contraption came into view - a frame capture caught the render thread inside
-    //glLinkProgram here on a 523ms frame. Called during renderer init, where a stall is behind the
-    //loading screen. Failure is not fatal: forPipeline still falls back to the unpatched shaders.
     public static void warmup(AbstractRenderPipeline pipeline) {
         if (!net.neoforged.fml.ModList.get().isLoaded("create")) {
             return;
@@ -54,9 +45,6 @@ public final class DistantShaders {
 
     //uniformLightVariant: per-draw light uniform (moving carriages) vs per-vertex baked light (tracks)
     public static Shader forPipeline(AbstractRenderPipeline pipeline, boolean uniformLightVariant) {
-        //Patch content follows the pipeline instance (i.e. the loaded shader pack). Probe the pack's
-        //voxy patch ONCE per pipeline instead of building + discarding the multi-KB patch string every
-        //frame - a pack reload swaps the pipeline instance, which re-triggers this block.
         if (patchedOwner != pipeline) {
             freePatched();
             patchedOwner = pipeline;

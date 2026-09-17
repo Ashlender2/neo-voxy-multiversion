@@ -33,11 +33,6 @@ import static org.lwjgl.opengl.GL13C.glActiveTexture;
 import static org.lwjgl.opengl.GL20C.GL_CURRENT_PROGRAM;
 import static org.lwjgl.opengl.GL30C.GL_VERTEX_ARRAY_BINDING;
 
-//Render hook that fires inside the LOD pipeline, after opaque LOD terrain and right before the
-//translucent pass, with the pipeline's framebuffer bound. Its depth attachment holds the full LOD
-//depth in voxy's far-projection space, so geometry drawn here is occluded by (and occludes) LOD
-//terrain naturally; the colour is carried to the screen by the pipeline's final composite. Works
-//on both the normal and the shader pipeline since both share this base-class path.
 public final class LodPipelineHooks {
     public interface Renderer {
         //depthFunc is the pipeline's closer-or-equal compare - GEQUAL under reverse-Z, LEQUAL otherwise
@@ -166,10 +161,6 @@ public final class LodPipelineHooks {
         }
     }
 
-    //Runs body with a full capture/restore of the GL state our renderers mutate. Program and VAO
-    //restore through GlStateManager (unconditional binds, resyncs its caches); textures restore
-    //through raw GL - GlStateManager._bindTexture skips the real call when its cache already holds
-    //the requested id, which is exactly the post-hook situation (cache==pre-hook id, reality==ours).
     public static void renderStateGuarded(Runnable body) {
         int prevProgram = glGetInteger(GL_CURRENT_PROGRAM);
         int prevVao = glGetInteger(GL_VERTEX_ARRAY_BINDING);
@@ -225,10 +216,6 @@ public final class LodPipelineHooks {
         }
     }
 
-    //The pipeline drives GL directly, desyncing vanilla's cached bindings: a later
-    //ShaderInstance.apply / VertexBuffer.bind may think its texture/program/VAO is still bound and
-    //skip the rebind, sampling garbage or drawing with the pipeline's own program and vertex
-    //layout. Zeroing the caches forces every following bind to genuinely happen.
     public static void invalidateGlCaches() {
         for (int unit = 0; unit < 4; unit++) {
             GlStateManager._activeTexture(GL_TEXTURE0 + unit);

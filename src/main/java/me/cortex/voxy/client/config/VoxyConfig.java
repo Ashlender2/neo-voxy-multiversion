@@ -142,16 +142,7 @@ public class VoxyConfig {
     // water and seasonal block models are decided per remesh against the current solar term, and
     // stored voxels stay season neutral.
     public boolean eclipticSeasonsSnowLod = true;
-    // EclipticSeasons compat: re-judge snow over the STORED section data when the season changes,
-    // writing complement ids back into the store. The mesh-time view needs no store rewrite; this
-    // exists only to normalise archives that already carry baked complement ids. Walks the whole
-    // section store on a background thread.
     public boolean eclipticSeasonsLodAutoReload = false;
-    // EclipticSeasons compat: rebuild the LOD renderer when the season changes. The rebuild
-    // re-meshes everything, and each remesh re-judges the season - so with the mesh-time view this
-    // is the channel that makes a season change actually appear at LOD range (snow, models AND the
-    // per-biome tint rows, which only re-capture on a renderer rebuild). Off would leave distant
-    // colours frozen at the join-time season for the whole session.
     public boolean eclipticSeasonsReloadOnSeasonChange = true;
 
     // Print the build, its maintainer and the fork's repository to chat on world join.

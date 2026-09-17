@@ -54,19 +54,14 @@ import static org.lwjgl.opengl.GL11.*;
 
 //Also has a fast long[] based metadata lookup for when the terrain mesher needs to look up the face occlusion data
 
-//TODO: support more than 65535 states, what should actually happen is a blockstate is registered, the model data is generated, then compared
-// to all other models already loaded, if it is a duplicate, create a mapping from the id to the already loaded id, this will help with meshing aswell
-// as leaves and such will be able to be merged
 
 
 
-//TODO: NOTE!!! is it worth even uploading as a 16x16 texture, since automatic lod selection... doing 8x8 textures might be perfectly ok!!!
 // this _quarters_ the memory requirements for the texture atlas!!! WHICH IS HUGE saving
 public class ModelFactory {
     public static final int MODEL_TEXTURE_SIZE = 16;
     public static final int LAYERS = Integer.numberOfTrailingZeros(MODEL_TEXTURE_SIZE);
 
-    //TODO: replace the fluid BlockState with a client model id integer of the fluidState, requires looking up
     // the fluid state in the mipper
     private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean conservativeComplexModel, boolean completeComplexBlock) {
         public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean conservativeComplexModel, boolean completeComplexBlock) {
@@ -81,33 +76,16 @@ public class ModelFactory {
     private final long bakeScratchBuffer = MemoryUtil.nmemAlloc(MODEL_TEXTURE_SIZE*MODEL_TEXTURE_SIZE*8*6);
 
 
-    //Model data might also contain a constant colour if the colour resolver produces a constant colour, this saves space in the
-    // section buffer reverse indexing
 
     //model data also contains if a face should be randomly rotated,flipped etc to get rid of moire effect
     // this would be done in the fragment shader
 
-    //The Meta-cache contains critical information needed for meshing, colour provider bit, per-face = is empty, has alpha, is solid, full width, full height
-    // alpha means that some pixels have alpha values and belong in the translucent rendering layer,
-    // is empty means that the face is air/shouldent be rendered as there is nothing there
-    // is solid means that every pixel is fully opaque
-    // full width, height, is if the blockmodel dimentions occupy a full block, e.g. comparator, some faces do some dont and some only in a specific axis
 
-    //FIXME: the issue is e.g. leaves are translucent but the alpha value is used to colour the leaves, so a block can have alpha but still be only made up of transparent or opaque pixels
-    // will need to find a way to send this info to the shader via the material, if it is in the opaque phase render as transparent with blending shiz
 
-    //TODO: ADD an occlusion mask that can be queried (16x16 pixels takes up 4 longs) this mask shows what pixels are exactly occluded at the edge of the block
     // so that full block occlusion can work nicely
 
 
-    //TODO: what might work maybe, is that all the transparent pixels should be set to the average of the other pixels
-    // that way the block is always "fully occluding" (if the block model doesnt cover the entire thing), maybe
-    // this has some issues with quad merging
-    //TODO: ACTUALLY, full out all the transparent pixels that are _within_ the bounding box of the model
-    // this will mean that when quad merging and rendering, the transparent pixels of the block where there shouldent be
-    // might still work???
 
-    // this has an issue with scaffolding i believe tho, so maybe make it a probability to render??? idk
     private final long[] metadataCache;
     private final int[] fluidStateLUT;
     private final int[] fluidKinds;
@@ -136,18 +114,12 @@ public class ModelFactory {
         return this.blendPalette;
     }
 
-    //The field name is load-bearing: VSS 0.2.8's ModelFactoryFluidBakeOrderMixin reflects for
-    //`bakeQueue` to re-order fluid bakes. Fluid dependencies are handled natively here (see addEntry's
-    //fluid LUT), and VSS's self-dependent-fluid fallback wrongly maps custom fluid blocks (Supplement's
-    //lumisene, a non-LiquidBlock fluid) to the transparent model. Under any other name VSS's own
-    //reflection guard trips, logs once and leaves the stock path alone - do not rename this back.
     private final ConcurrentLinkedDeque<BlockBake> blockBakeQueue = new ConcurrentLinkedDeque<>();
 
     private final ConcurrentLinkedDeque<ResultUploader> uploadResults = new ConcurrentLinkedDeque<>();
 
     private Object2IntMap<BlockState> customBlockStateIdMapping;
 
-    //TODO: NOTE!!! is it worth even uploading as a 16x16 texture, since automatic lod selection... doing 8x8 textures might be perfectly ok!!!
     // this _quarters_ the memory requirements for the texture atlas!!! WHICH IS HUGE saving
     public ModelFactory(Mapper mapper, ModelStore storage) {
         this.mapper = mapper;
@@ -222,12 +194,6 @@ public class ModelFactory {
         }
     }
 
-    //Retire a bake that threw. The state MUST end up mapped: leaving idMappings at -1 makes
-    //RenderDataFactory raise IdNotYetComputedException for every section containing it, and
-    //RenderGenerationService re-queues that task with no attempt cap - the workers would spin on it
-    //forever and pin the sections they hold. Model id 0 is read as air (RenderDataFactory's
-    //`modelId == 0` branch), so the state simply renders as nothing at LOD range, and the mapping
-    //also stops addEntry from queueing it again.
     private void retireFailedBake(int blockId) {
         //Two throw sites fire after the mapping was already set correctly; do not turn a block that
         //actually baked into air.
@@ -242,15 +208,8 @@ public class ModelFactory {
         }
     }
 
-    //Per-block, because Logger.error also puts a line in chat and a block like IE's conveyor brings
-    //dozens of states with it.
     private static final ObjectSet<Block> LOGGED_BAKE_FAILURE = new ObjectOpenHashSet<>();
 
-    //What processTextureBakeResult has claimed so far, so a throw partway through can be undone.
-    //Bakery thread only. An orphaned model id is not harmless: it stays in modelTexture2id, so a
-    //later state that bakes to identical textures dedups onto it and inherits a slot whose model
-    //data and atlas tile were never uploaded, with a zeroed metadata entry that reads as "all six
-    //faces exist" - garbage geometry rather than the air fallback.
     private ModelEntry pendingEntry;
     private int pendingModelId = -1;
     private int pendingBiomeColourEntries = -1;
@@ -259,10 +218,6 @@ public class ModelFactory {
     private void rollbackPendingBake() {
         if (this.pendingEntry != null) {
             this.modelTexture2id.removeInt(this.pendingEntry);
-            //Ids are handed out as modelTexture2id.size(), so dropping the entry hands this id to the
-            //next model. Anything already keyed to it has to go back, or that model inherits it.
-            //The fluid slot: only written when the model has one, so a reusing model would keep the
-            //stale value and getFluidClientStateId would hand back a fluid it never declared.
             this.fluidStateLUT[this.pendingModelId] = -1;
             //The biome-colour list: its entries are (modelId, state) pairs, and addBiome writes each
             //one straight into MODEL_SIZE*modelId's tint field - a stale pair repaints whatever model
@@ -317,11 +272,6 @@ public class ModelFactory {
     private boolean processModelResult0(BlockBake bake) {
         ColourDepthTextureData[] textureData = new ColourDepthTextureData[6];
 
-        //Baking runs someone else's model code on our worker thread. A model that throws used to take
-        //the whole bakery down with it: the thread's uncaught handler stops the loop, every later block
-        //silently never bakes, and the next tick rethrows on the render thread. The guard covers the
-        //result handling too, not just the bake - a state whose fluid failed earlier throws from
-        //processTextureBakeResult, and that would kill the thread just the same.
         int flags;
         try {
             flags = this.bakery2.renderToOutput(bake.blockId, bake.state, this.bakeScratchBuffer);
@@ -335,7 +285,6 @@ public class ModelFactory {
 
         {//Create texture data
             long ptr = this.bakeScratchBuffer;
-            //long ptr = result.rawData.address;
             final int FACE_SIZE = MODEL_TEXTURE_SIZE * MODEL_TEXTURE_SIZE;
             for (int face = 0; face < 6; face++) {
                 long faceDataPtr = ptr + (FACE_SIZE * 4) * face * 2;
@@ -359,12 +308,6 @@ public class ModelFactory {
 
         boolean hasDarkenedTextures = (flags&2)!=0;
         boolean isShaded = (flags&1)!=0;
-        //The declared render layer only says what the block is ALLOWED to do, not what it actually does:
-        //a model registered to translucent whose texels are all fully opaque still gets sorted, blended
-        //and excluded from occlusion for nothing. Classify from the pixels we just baked instead - any
-        //partially transparent texel makes it translucent, otherwise opaque-everywhere makes it solid and
-        //anything else is a cutout. Leaves are deliberately not special-cased here; that lives with the
-        //balancedLeaf handling further down.
         RenderType layer = null;
         if ((flags & 4) != 0) {
             boolean anyTranslucent = false;
@@ -523,7 +466,6 @@ public class ModelFactory {
                                                            RenderType layer, boolean crossPlant,
                                                            boolean conservativeComplexModel) {
         if (this.idMappings[blockId] != -1) {
-            //This should be impossible to reach as it means that multiple bakes for the same blockId happened and where inflight at the same time!
             throw new IllegalStateException("Block id already added: " + blockId + " for state: " + blockState);
         }
 
@@ -534,7 +476,6 @@ public class ModelFactory {
         }
         this.blockStatesInFlightLock.unlock();
 
-        //TODO: add thing for `blockState.hasEmissiveLighting()` and `blockState.getLuminance()`
 
         boolean isFluid = isFluidBlockState(blockState);
         int fluidKind = isFluid ? this.getOrCreateFluidKind(blockState.getFluidState()) : 0;
@@ -570,11 +511,6 @@ public class ModelFactory {
             isBiomeColourDependent = isBiomeDependentColour(colourProvider, colourState);
             if (!isBiomeColourDependent) {
                 var seasonalView = me.cortex.voxy.client.core.compat.eclipticseasons.SeasonalLod.view;
-                //A seasonal constant tint never calls getBlockTint, so the probe above reads it as
-                //a fixed colour and captureColourConstant below would freeze the bake-day season
-                //into the model. Forcing it onto the per-biome colour rows keeps the colour in
-                //colourData, where a renderer rebuild can re-capture it without re-identifying
-                //the model.
                 isBiomeColourDependent = seasonalView != null && seasonalView.isSeasonalConstantTint(colourState, colourProvider);
             }
         }
@@ -601,8 +537,6 @@ public class ModelFactory {
                 return null;
             } else {//Not a duplicate so create a new entry
                 modelId = this.modelTexture2id.size();
-                //NOTE: we set the mapping at the very end so that race conditions with this and getMetadata dont occur
-                //this.idMappings[blockId] = modelId;
                 this.modelTexture2id.put(entry, modelId);
                 this.pendingEntry = entry;
                 this.pendingModelId = modelId;
@@ -628,8 +562,6 @@ public class ModelFactory {
         uploadResult.modelId = modelId;
         long uploadPtr = uploadResult.model.address;
 
-        //TODO: implement;
-        // TODO: if it has a constant colour instead... idk why (apparently for things like spruce leaves)?? but premultiply the texture data by the constant colour
 
         //If it contains fluid but isnt a fluid
         if ((!isFluid) && (!blockState.getFluidState().isEmpty()) && clientFluidStateId != -1) {
@@ -640,8 +572,6 @@ public class ModelFactory {
 
 
 
-        //TODO: special case stuff like vines and glow lichen, where it can be represented by a single double sided quad
-        // since that would help alot with perf of lots of vines, can be done by having one of the faces just not exist and the other be in no occlusion mode
 
         var depths = computeModelDepth(textureData, checkMode, layer!=RenderType.solid()?TextureUtils.DEPTH_MODE_MIN:TextureUtils.DEPTH_MODE_AVG);
 
@@ -654,7 +584,6 @@ public class ModelFactory {
             }
         }
 
-        //TODO: THIS, note this can be tested for in 2 ways, re render the model with quad culling disabled and see if the result
         // is the same, (if yes then needs double sided quads)
         // another way to test it is if e.g. up and down havent got anything rendered but the sides do (e.g. all plants etc)
         boolean needsDoubleSidedQuads = (depths[0] < -0.1 && depths[1] < -0.1) || (depths[2] < -0.1 && depths[3] < -0.1) || (depths[4] < -0.1 && depths[5] < -0.1);
@@ -663,7 +592,6 @@ public class ModelFactory {
         boolean cullsSame = false;
 
         try {
-            //TODO: Could also move this into the RenderDataFactory and do it on the actual blockstates instead of a guestimation
             boolean allTrue = true;
             boolean allFalse = true;
             //Guestimation test for if the block culls itself
@@ -677,8 +605,6 @@ public class ModelFactory {
 
             if (allFalse == allTrue) {//If only some sides where self culled then abort
                 cullsSame = false;
-                //if (LOGGED_SELF_CULLING_WARNING.add(blockState))
-                //    Logger.info("Warning! blockstate: " + blockState + " only culled against its self some of the time");
             }
 
             if (allTrue) {
@@ -713,9 +639,7 @@ public class ModelFactory {
 
         boolean fullyOpaque = true;
 
-        //TODO: FIXME faces that have the same "alignment depth" e.g. (sizes[0]+sizes[1])~=1 can be merged into a double faced single quad
 
-        //TODO: add a bunch of control config options for overriding/setting options of metadata for each face of each type
         for (int face = 5; face != -1; face--) {//In reverse order to make indexing into the metadata long easier
             long faceUploadPtr = uploadPtr + 4L * face;//Each face gets 4 bytes worth of data
             metadata <<= 8;
@@ -738,19 +662,13 @@ public class ModelFactory {
                         && writeCount == MODEL_TEXTURE_SIZE * MODEL_TEXTURE_SIZE;
             }
 
-            //TODO: use faceSize and the depths to compute if mesh can be correctly rendered
 
             metadata |= faceCoversFullBlock?2:0;
 
-            //TODO: add alot of config options for the following
             boolean occludesFace = true;
             occludesFace &= layer != RenderType.translucent();//If its translucent, it doesnt occlude
-            // Pure fluids use their own family-aware meshing path. A modded fluid may declare a
-            // solid/cutout render layer and have an opaque texture, but it still must not delete
-            // the terrain face behind it: sloped and partial-height surfaces can expose that face.
             occludesFace &= !isFluid;
 
-            //TODO: make this an option, basicly if the face is really close, it occludes otherwise it doesnt
             occludesFace &= offset < 0.1;//If the face is rendered far away from the other face, then it doesnt occlude
 
             if (occludesFace) {
@@ -766,7 +684,6 @@ public class ModelFactory {
 
 
             boolean canBeOccluded = true;
-            //TODO: make this an option on how far/close
             canBeOccluded &= offset < 0.3;//If the face is rendered far away from the other face, then it cant be occluded
             if (conservativeComplexModel) {
                 canBeOccluded &= faceCoversFullBlock;
@@ -834,14 +751,12 @@ public class ModelFactory {
 
         uploadPtr += 4*6;
         //Have 40 bytes free for remaining model data
-        // todo: put in like the render layer type ig? along with colour resolver info
         int modelFlags = 0;
         modelFlags |= colourProvider != null?1:0;
         modelFlags |= isBiomeColourDependent?2:0;//Basicly whether to use the next int as a colour or as a base index/id into a colour buffer for biome dependent colours
         modelFlags |= layer == RenderType.translucent()?4:0;//Is translucent
 
 
-        //TODO: THIS
         modelFlags |= isShaded?8:0;//model has AO and shade
         // The dimension-wide fluid datum represents sea level and is only valid for water.
         // Applying it to lava raises coarse lava caps until the player reaches LOD 0.
@@ -903,12 +818,10 @@ public class ModelFactory {
         //Note: if the layer isSolid then need to fill all the points in the texture where alpha == 0 with the average colour
         // of the surrounding blocks but only within the computed face size bounds
 
-        //TODO callback to inject extra data into the model data
 
 
         MipGen.putTextures(darkenedTinting, textureData, uploadResult.texture);
 
-        //glGenerateTextureMipmap(this.textures.id);
 
         //Set the mapping at the very end
         this.idMappings[blockId] = modelId;
@@ -976,7 +889,6 @@ public class ModelFactory {
         public void upload(GlBuffer modelBuffer, GlBuffer modelColourBuffer) {
             this.biomeColourBuffer.cpyTo(UploadStream.INSTANCE.upload(modelColourBuffer, 0, this.biomeColourBuffer.size));
 
-            //TODO: optimize this to like a compute scatter update or something
             long ptr = this.modelBiomeIndexPairs.address;
             for (long offset = 0; offset < this.modelBiomeIndexPairs.size; offset += 8) {
                 long v = MemoryUtil.memGetLong(ptr);ptr += 8;
@@ -1060,10 +972,6 @@ public class ModelFactory {
             return (state, world, pos, tintIndex) -> blockColors.getColor(state, world, pos, tintIndex);
         }
         BlockColor provider = (state, world, pos, tintIndex) -> blockColors.getColor(state, world, pos, tintIndex);
-        //Probe through the same path the capture uses. Probing more strictly - a null level, tint index
-        //0 only - rejects modded providers that dereference the level (they throw, and the catch reads as
-        //"no tint") and those that only answer on tint index 1. captureColourConstant copes with both,
-        //and a rejected block bakes untinted: its raw greyscale texture at LOD range, i.e. grey leaves.
         int color;
         try {
             color = captureColourConstant(provider, defaultState, DEFAULT_BIOME);
@@ -1098,7 +1006,6 @@ public class ModelFactory {
         return id != null && id.getNamespace().equals("supplementaries") && id.getPath().equals("lumisene");
     }
 
-    //TODO: add a method to detect biome dependent colours (can do by detecting if getColor is ever called)
     // if it is, need to add it to a list and mark it as biome colour dependent or something then the shader
     // will either use the uint as an index or a direct colour multiplier
     private static int captureColourConstant(BlockColor colorProvider, BlockState state, Biome biome) {
@@ -1219,7 +1126,6 @@ public class ModelFactory {
         for (var dir : Direction.values()) {
             var data = textures[dir.get3DDataValue()];
             float fd = TextureUtils.computeDepth(data, computeMode, checkMode);//Compute the min float depth, smaller means closer to the camera, range 0-1
-            //int depth = Math.round(fd * MODEL_TEXTURE_SIZE);
             //If fd is -1, it means that there was nothing rendered on that face and it should be discarded
             if (fd < -0.1) {
                 res[dir.ordinal()] = -1;
@@ -1298,7 +1204,6 @@ public class ModelFactory {
     }
 
     public int getInflightCount() {
-        //TODO replace all of this with an atomic?
         int size = this.blockStatesInFlight.size();
         size += this.uploadResults.size();
         size += this.biomeQueue.size();

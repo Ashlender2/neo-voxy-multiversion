@@ -21,15 +21,6 @@ import static org.lwjgl.opengl.GL45C.glVertexArrayAttribIFormat;
 import static org.lwjgl.opengl.GL45C.glVertexArrayElementBuffer;
 import static org.lwjgl.opengl.GL45C.glVertexArrayVertexBuffer;
 
-//Quad mesh in the distant-render vertex format, fully self-managed GL (own VBO+VAO, shared quad
-//index buffer). Layout per vertex (32 bytes, see STRIDE):
-//  0  vec3  position (relative to the mesh origin)
-//  12 vec2  block atlas uv
-//  20 2x u8 lightmap uv (normalized)
-//  22 u8    shade (normalized)
-//  23 u8    face index (read as an integer attribute, not normalized)
-//  24 4x u8 rgba tint (normalized; white for untinted)
-//  28 u32   shader-pack material/block ID (zero when unknown)
 public final class DistantMesh {
     public static final int STRIDE = 32;
 

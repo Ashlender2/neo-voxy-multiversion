@@ -115,10 +115,6 @@ public final class CreateCopycatCompat {
         }
     };
 
-    //The wrapper models' ModelData keys, fetched reflectively once. All are public static finals;
-    //stuffing the material under every key lets one ModelData serve either mod's wrapper model.
-    //Copycats+ getQuads reads the MATERIALS map keyed by model part ("material" for single-material
-    //blocks - the same upgrade its own gatherModelData applies), not the single-value property.
     private static volatile ModelProperty<BlockState> createMaterialProperty;
     private static volatile ModelProperty<BlockState> addonMaterialProperty;
     private static volatile ModelProperty<Map<String, BlockState>> addonMaterialsProperty;
@@ -152,11 +148,6 @@ public final class CreateCopycatCompat {
         }
         SectionMappings mappings = SECTION_MAPPINGS.get();
         mappings.reset();
-        //No block entities to ask - a section streamed from the server, or a chunk that has gone. The
-        //materials were recorded the last time they COULD be read, so use those instead of publishing
-        //plain ids over a build that was dressed. Without this a camouflaged build reverts to bare
-        //skeleton exactly where it is most visible: out at LOD range, where the client never loads the
-        //chunk and only a server-fed section ever arrives.
         if (mapper == null || section == null) return;
         if (chunk == null || chunk.getBlockEntities().isEmpty()) {
             if (section.maybeHas(COPYCAT_STATE_PREDICATE)) {
@@ -171,10 +162,6 @@ public final class CreateCopycatCompat {
         int minY = sectionY << 4;
         int maxY = minY + 15;
 
-        //The iteration itself is inside the guard, not just the body: this runs on an ingest worker over
-        //a map the main thread mutates, so hasNext()/next() can throw ConcurrentModification. Whatever
-        //was collected before the throw still publishes below - a partial dressing beats none, and the
-        //next ingest of this section redoes it.
         try {
             for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
                 if (!CopycatCommon.isCopycatClass(blockEntity)) {

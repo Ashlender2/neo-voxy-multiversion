@@ -16,10 +16,6 @@ public final class SeasonalLod {
 
     private SeasonalLod() {}
 
-    //Bottom line under the EsCompatGate version floor: an ES build the floor lets through can
-    //still lack a symbol the view only touches mid-mesh, which surfaces as a LinkageError on a
-    //mesh worker. Retrying would throw the identical error for every remeshed section, so the callers
-    //fall back to the season-neutral data and put the whole view down.
     public static void disarm(LinkageError error) {
         if (view == null) return;
         view = null;
@@ -30,9 +26,6 @@ public final class SeasonalLod {
     public record SeasonalBakedModel(BakedModel model, boolean replace) { }
 
     public interface View {
-        //Returns source untouched, or a private copy with render-only ids swapped in. The input
-        //is the section's shared backing array (WorldSection.materialize) - it is read by ingest,
-        //save and other mesh workers concurrently and must never be written.
         long[] substituteSection(WorldEngine world, WorldSection section, long[] source);
 
         //In-place seasonal pass over the four lateral neighbour face slices already pulled into
@@ -41,12 +34,6 @@ public final class SeasonalLod {
         void substituteLateralSlices(WorldEngine world, WorldSection section,
                                      long[] neighborFaces, int neighborMsk);
 
-        //A block whose vanilla colour provider returns a season-dependent constant without ever
-        //touching getBlockTint - the probe in ModelFactory#isBiomeDependentColour cannot see it
-        //and would freeze the bake-time colour into the model. The provider is passed as Object
-        //to keep this interface free of EclipticSeasons types; implementations instanceof it
-        //against ES's own colour sources so data-driven SeasonalColorOverrides entries are caught
-        //too, not just the hardwired leaf blocks.
         boolean isSeasonalConstantTint(BlockState state, Object colourProvider);
 
         SeasonalBakedModel resolveSeasonalModel(BlockState state, ResourceLocation modelId);

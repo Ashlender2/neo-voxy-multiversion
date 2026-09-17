@@ -44,10 +44,6 @@ public final class DistantTrainRenderer implements LodPipelineHooks.Renderer {
 
     @Override
     public void render(me.cortex.voxy.client.core.AbstractRenderPipeline pipeline, Viewport<?> viewport, int depthFunc) {
-        //Both pipelines: draw into the pipeline's opaque target. Vertices are camera-relative world
-        //space and voxy's combined view-projection puts depth in the same space as the LOD terrain,
-        //so occlusion is per-pixel. On the iris pipeline the patched shader fills the g-buffer;
-        //bogeys still go through vanilla-style buffers, which cannot, so they skip there for now.
         pipeline.setupAndBindOpaque(viewport);
         //renderCommon only reads viewProjection (copies via transform.set), never mutates it
         this.renderCommon(pipeline, viewport, viewport.MVP,
@@ -115,11 +111,6 @@ public final class DistantTrainRenderer implements LodPipelineHooks.Renderer {
                     if (distSq > maxDistSq) {
                         continue;
                     }
-                    //Hand over to Create by the same rule vanilla uses to skip entities: the section
-                    //must be compiled AND the carriage must be close enough for its entity to still
-                    //be tracked. Only meaningful inside the tracking band - beyond it we always draw,
-                    //so the section lookup + BlockPos are skipped for the distant carriages that are
-                    //this renderer's whole purpose. The grace absorbs sodium's lazy recompiles.
                     if (distSq < handoverSq) {
                         if (mc.levelRenderer.isSectionCompiled(scratchPos.set(
                                 (int) java.lang.Math.floor(px), (int) java.lang.Math.floor(py), (int) java.lang.Math.floor(pz)))) {
@@ -165,7 +156,6 @@ public final class DistantTrainRenderer implements LodPipelineHooks.Renderer {
                         glDepthMask(true);
                         glDisable(GL_CULL_FACE);
                         //Depth-passing fragments get stencil=3: the sentinel-restore pass and
-                        //iris's depth-hack (both full-mask stencil==0) leave our depth intact,
                         //while bit0 stays set so translucent LOD (EQUAL,1 mask 0x1) still
                         //composites distant water in front of us
                         glEnable(GL_STENCIL_TEST);
@@ -174,10 +164,6 @@ public final class DistantTrainRenderer implements LodPipelineHooks.Renderer {
                         renderStateActive = true;
                     }
 
-                    //Mirror of OrientedContraptionEntity.applyLocalTransforms: translate(-.5,0,-.5),
-                    //center, rotY(viewYRot), rotZ(viewXRot), rotY(initialYaw), uncenter - the first
-                    //two translations fold into (0, 0.5, 0). getViewYRot returns the negated yaw
-                    //field, so the negation belongs here; pitch passes through unnegated.
                     transform.set(viewProjection)
                             .translate((float) dx, (float) dy + 0.5f, (float) dz)
                             .rotateY((float) java.lang.Math.toRadians(-yaw))
@@ -221,7 +207,6 @@ public final class DistantTrainRenderer implements LodPipelineHooks.Renderer {
     }
 
     //Interpolates each bogey pose and draws its snapshot mesh. Transform mirrors the tail of
-    //CarriageContraptionEntityRenderer.translateBogey (anchor -> yaw -> pitch -> +0.5y -> roll);
     //the -1.5078125 style offset is baked into the captured mesh. Wheel spin is a P4 follow-up.
     private static void drawBogeys(DistantTrainManager.CarriageTrack track, DistantTrainManager.ShapeEntry entry,
                                    float t, double camX, double camY, double camZ, Matrix4f viewProjection, Matrix4f transform) {

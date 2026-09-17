@@ -5,15 +5,6 @@ import net.minecraft.world.level.block.Blocks;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-//Render-only block-id space layered on top of Mapper's real ids. Real ids grow up from 0, legacy
-//ingest-time snow is the complement (0xFFFFF - id) growing down from the top, seasonal model ids
-//grow up from 0x80000, and 0xFFFFF is the frozen-water sentinel (air is never encoded, so its
-//complement slot is free). None of these are ever persisted: stored sections only ever contain
-//real ids and legacy complements from old archives.
-//
-//Lives in common, not client: Mapper's decode path has to resolve legacy complement ids from old
-//archives even on a dedicated server, and a client-class reference here would be a dist crash the
-//first time such an id is touched.
 public final class SeasonalIdSpace {
     public static final int MAX_BLOCK_ID = 0xFFFFF;
     public static final int VIRTUAL_ICE_ID = MAX_BLOCK_ID;
@@ -40,12 +31,6 @@ public final class SeasonalIdSpace {
         return virtualIceEntry;
     }
 
-    //Ids are handed out monotonically and never recycled within a session: they sit inside built
-    //mesh data and ModelFactory's idMappings, which only ever reset with the renderer. The model
-    //is referenced by stable ResourceLocation, so a resource reload does not invalidate entries.
-    //Refuses to grow into the top-down complement region, and refuses to hand out anything once
-    //the real-id region has grown into the seasonal range (decode would then read seasonal ids
-    //as real ones).
     public static int getOrCreate(Mapper mapper, int originalBlockId,
                                   ResourceLocation modelId, boolean snowy) {
         var key = new Entry(originalBlockId, modelId, snowy);
@@ -69,10 +54,6 @@ public final class SeasonalIdSpace {
         return ID_TO_ENTRY.get(blockId);
     }
 
-    //Real id behind any render-only encoding; render-only ids that do not resolve come back
-    //unchanged (the caller's array access then fails the same way it does for any unknown id).
-    //Order matters: the ice sentinel first (its complement is 0 = air), then seasonal ids, then
-    //the legacy complement range.
     public static int decode(Mapper mapper, int blockId) {
         int count = mapper.getBlockStateCount();
         if (blockId < count) return blockId;

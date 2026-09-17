@@ -31,7 +31,6 @@ void main() {
     //Transform ipos with respect to the vertex corner
     ivec3 pos = (((ipos<<detail)-baseSectionPos)<<5);
 
-    //TODO maybe make the size expansion 0.5 (or maybe get rid of it all together?)
     const float EXPANSION = 1.0f;
 
 

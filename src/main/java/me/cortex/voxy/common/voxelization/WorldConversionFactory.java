@@ -31,10 +31,6 @@ public class WorldConversionFactory {
     private static final class Cache {
         private final int[] biomeCache = new int[4*4*4];
         private final WeakHashMap<Mapper, Reference2IntOpenHashMap<BlockState>> localMapping = new WeakHashMap<>();
-        //Biome ids resolve through Mapper.getIdForBiome, which builds a ResourceLocation string per
-        //call. Registry biome holders are stable within a session, so an identity cache keyed on the
-        //holder saves 64 string allocations + hashes per section on the ingest hot path (mirrors the
-        //block-state localMapping above).
         private final WeakHashMap<Mapper, Reference2IntOpenHashMap<Holder<Biome>>> localBiomeMapping = new WeakHashMap<>();
         private int[] paletteCache = new int[1024];
         private final long[] zoomCellCache = new long[5*5*5];
@@ -52,7 +48,6 @@ public class WorldConversionFactory {
         }
     }
 
-    //TODO: create a mapping for world/mapper -> local mapping
     private static final ThreadLocal<Cache> THREAD_LOCAL = ThreadLocal.withInitial(Cache::new);
 
     private static boolean setupLithiumLocalPallet(Palette<BlockState> vp, Reference2IntOpenHashMap<BlockState> blockCache, Mapper mapper, int[] pc)  {
@@ -90,8 +85,6 @@ public class WorldConversionFactory {
                 pc[i] = blockId;
             }
         } else if (vp instanceof HashMapPalette<BlockState> pal) {
-            //var map = pal.map;
-            //TODO: heavily optimize this by reading the map directly
 
             for (int i = 0; i < vp.getSize(); i++) {
                 BlockState state = null;
@@ -182,7 +175,7 @@ public class WorldConversionFactory {
                         }
                         biomes[i++] = bid;
                         if (inital==-1) inital = bid;
-                        shouldZoom &= inital == bid;//Evil hacky trick, we only need to zoom if on a biome boarder
+                        shouldZoom &= inital == bid;
                     }
                 }
             }

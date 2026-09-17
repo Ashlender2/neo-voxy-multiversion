@@ -65,9 +65,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
     static {
         glSamplerParameteri(DEPTH_SAMPLER, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glSamplerParameteri(DEPTH_SAMPLER, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        //The stencil-setup pass samples the source depth at UV*scaleFactor; when a shader pipeline
-        //renders at a scaled resolution the factor is not 1 and unclamped sampling wraps around
-        //(default REPEAT), smearing the vanilla-coverage sentinel over sky/LOD regions
         glSamplerParameteri(DEPTH_SAMPLER, org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_S, org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE);
         glSamplerParameteri(DEPTH_SAMPLER, org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_T, org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE);
     }
@@ -87,7 +84,7 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
     //Allows pipelines to configure model baking system
     public void setupExtraModelBakeryData(ModelBakerySubsystem modelService) {}
 
-    public final void setSectionRenderer(AbstractSectionRenderer<?,?> sectionRenderer) {//Stupid java ordering not allowing something pre super
+    public final void setSectionRenderer(AbstractSectionRenderer<?,?> sectionRenderer) {
         if (this.sectionRenderer != null) throw new IllegalStateException();
         this.sectionRenderer = sectionRenderer;
     }
@@ -128,11 +125,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
 
         rs.postOpaquePreperation(viewport);
 
-        //Opaque extras (distant trains/tracks) draw into the opaque target here, on both pipelines:
-        //the depth attachment holds full LOD depth in voxy's far-projection space so occlusion is
-        //per-pixel, and on the iris pipeline the renderers use the shader pack's patched fragment
-        //shader to fill the whole g-buffer. Running before postOpaquePreTranslucent means the depth
-        //copy/composite passes carry our geometry too.
         me.cortex.voxy.client.compat.LodPipelineHooks.beforeTranslucent(this, viewport, this.properties.closerEqualDepthCompare());
 
         this.postOpaquePreTranslucent(viewport, sourceFrameBuffer);
@@ -153,8 +145,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
 
     protected void initDepthStencil(Viewport<?> viewport, int sourceFrameBuffer, int targetFb, int srcWidth, int srcHeight, int width, int height) {
         glClearNamedFramebufferfi(targetFb, GL_DEPTH_STENCIL, 0, this.properties.clearDepth(), 1);
-        // using blit to copy depth from mismatched depth formats is not portable so instead a full screen pass is performed for a depth copy
-        // the mismatched formats in this case is the d32 to d24s8
         glBindFramebuffer(GL30.GL_FRAMEBUFFER, targetFb);
 
         //If pixel passes, update stencil to 0 and set depth to the reprojected source depth
@@ -182,10 +172,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         nglUniformMatrix4fv(2, 1, false, SCRATCH);
         viewport.MVP.getToAddress(SCRATCH);
         nglUniformMatrix4fv(3, 1, false, SCRATCH);
-        //ndc-z -> window-z of rasterized geometry: the projection's ndc range alone does not change
-        //the fixed-function 0.5*z+0.5 map, and gl_FragDepth writes must land in the same space as
-        //rasterized depth or mixed comparisons flip. Queried per frame - it is one glGetInteger and
-        //stale caching would silently skew every reprojected depth if anything flips clip control.
         boolean halfNdc = RenderProperties.windowIsHalfNdc();
         float ndcRemapScale = halfNdc ? 0.5f : 1.0f;
         float ndcRemapBias = halfNdc ? 0.5f : 0.0f;
@@ -210,10 +196,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         this.depthStencilSetup.blit();
 
         if (boundary.enabled() && this.useBoundaryGuardPass()) {
-            //Second pass over the same shader, stencil writes masked off: the dithered LOD-won pixels
-            //in the band keep stencil=1 but trade the cleared FAR depth for the vanilla surface pushed
-            //slightly outward. Without it those pixels read as empty to HiZ and stop occluding the
-            //pre-translucent hook geometry, which ignores stencil and tests depth alone.
             glStencilMask(0x00);
             glUniform1i(10, 1);
             this.depthStencilSetup.blit();
@@ -225,26 +207,14 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         glDepthFunc(this.properties.closerEqualDepthCompare());
         glColorMask(true,true,true,true);
 
-        //Make voxy terrain render only where there isnt mc terrain. The compare mask is bit0 only:
-        //the pre-translucent hook tags its mesh pixels 3 (bit0 kept set), and translucent LOD must
-        //still composite in front of them - a full-mask EQUAL,1 would punch mesh-shaped holes in
-        //distant water. Bit1 is the hook's "keep my depth" mark, tested full-mask where it matters.
         glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         glStencilFunc(GL_EQUAL, 1, 0x1);
     }
 
-    //The normal pipeline composites from a cleared private colour target, so a band pixel whose LOD
-    //geometry is missing would show through to nothing - hence the guard depth. Iris draws into an
-    //already-populated gbuffer where a missing LOD pixel simply keeps vanilla's colour, and applying
-    //the guard there rejects coarse LOD across the whole band instead.
     protected boolean useBoundaryGuardPass() {
         return true;
     }
 
-    //Rewrites every vanilla-covered (stencil==0) pixel back to the NEAR sentinel. The setup pass
-    //stamps reprojected real depth there so the pre-translucent hook geometry occludes correctly,
-    //but downstream consumers (SSAO, the composite cutout blit, shader-pack protocols) identify
-    //vanilla coverage by the exact sentinel value - call this once the hook has drawn.
     protected void restoreSentinelDepth() {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_ALWAYS);
@@ -263,8 +233,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
     private static final long SCRATCH = MemoryUtil.nmemAlloc(4*4*4);
     private static final Matrix4f INVERSE_MVP = new Matrix4f();
     protected static void transformBlitDepth(FullscreenBlit blitShader, int srcDepthTex, int dstFB, Viewport<?> viewport, Matrix4f targetTransform) {
-        // at this point the dst frame buffer doesn't have a stencil attachment so we don't need to keep the stencil test on for the blit
-        // in the worst case the dstFB does have a stencil attachment causing this pass to become 'corrupted'
         glDisable(GL_STENCIL_TEST);
         glBindFramebuffer(GL30.GL_FRAMEBUFFER, dstFB);
 
@@ -296,7 +264,6 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
             TimingStatistics.D.stop();
 
             this.nodeManager.tick(this.traversal.getNodeBuffer(), this.nodeCleaner);
-            //glFlush();
 
             this.nodeCleaner.tick(this.traversal.getNodeBuffer());//Probably do this here??
 

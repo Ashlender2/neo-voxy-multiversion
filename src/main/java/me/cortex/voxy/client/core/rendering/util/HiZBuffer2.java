@@ -46,11 +46,8 @@ public class HiZBuffer2 {
 
     private void alloc(int width, int height) {
         this.levels = Math.min(7,(int)Math.ceil(Math.log(Math.max(width, height))/Math.log(2)));
-        //We dont care about e.g. 1x1 size texture since you dont get meshlets that big to cover such a large area
-        //this.levels -= 1;//Arbitrary size, shinks the max level by alot and saves a significant amount of processing time
-        // (could probably increase it to be defined by a max meshlet coverage computation thing)
 
-        //GL_DEPTH_COMPONENT32F //Cant use this as it does not match the depth format of the provided depth buffer
+        //GL_DEPTH_COMPONENT32F
         this.texture = new GlTexture().store(this.type, this.levels, width, height).name("HiZ");
         glTextureParameteri(this.texture.id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
         glTextureParameteri(this.texture.id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

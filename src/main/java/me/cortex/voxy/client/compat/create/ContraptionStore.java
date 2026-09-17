@@ -22,18 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-//Persists frozen contraption snapshots into voxy's aux storage, so a structure the player left behind is
-//still standing in the LOD after a reload rather than reappearing only once they walk back to it.
-//
-//What is stored is the source, not the mesh: a block list plus the pose it froze at. The mesh is rebuilt
-//from that, which is also what lets a snapshot be evicted from memory and brought back - the reason the
-//resident set could only grow before.
-//
-//Block states go out as a palette of BlockState NBT rather than as voxy block ids. Those ids belong to
-//one Mapper over a store that is explicitly a deletable cache, so deleting it renumbers everything and
-//an id list held anywhere else silently decodes to different blocks - the id space is dense, so there is
-//no invalid value to detect it by. The NBT form carries the block's name and properties and goes through
-//the vanilla data fixer on a rename, which is what makes it safe to keep outside the store that wrote it.
 public final class ContraptionStore {
     public static final String TABLE = "create_contraptions";
     //FORMAT 3 persists the render NBT required by copycat models.

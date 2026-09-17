@@ -4,9 +4,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModList;
 
-//Dist-safe half of the copycat integration: class-name recognition and the render-nbt subset.
-//Shared by the client compat and the SERVER-side train shape sampler, which must never touch the
-//client-only model classes CreateCopycatCompat pulls in.
 public final class CopycatCommon {
     private static final boolean LOADED = ModList.get().isLoaded("create");
     static final String CREATE_PREFIX = "com.simibubi.create.content.decoration.copycat";
