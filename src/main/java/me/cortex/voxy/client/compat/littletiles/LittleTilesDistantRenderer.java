@@ -7,7 +7,6 @@ import me.cortex.voxy.client.compat.create.DistantShaders;
 import me.cortex.voxy.client.compat.create.DistantVisibility;
 import me.cortex.voxy.client.config.VoxyConfig;
 import me.cortex.voxy.client.core.rendering.Viewport;
-import me.cortex.voxy.client.core.rendering.LodBoundaryFade;
 import me.cortex.voxy.common.config.section.SectionStorage;
 import me.cortex.voxy.commonImpl.WorldIdentifier;
 import me.cortex.voxy.commonImpl.compat.littletiles.LittleTilesCompat;
@@ -176,10 +175,7 @@ public final class LittleTilesDistantRenderer implements LodPipelineHooks.Render
         else pipeline.setupAndBindOpaque(viewport);
 
         double vanillaReach = Math.max(0.0, mc.options.getEffectiveRenderDistance() * 16.0 - 14.0);
-        var boundary = LodBoundaryFade.getDistances();
-        boolean hardFadeHandoff = boundary.enabled();
-        double handoffDistance = hardFadeHandoff ? boundary.fadeStart() : vanillaReach;
-        double handoffDistanceSq = handoffDistance * handoffDistance;
+        double handoffDistanceSq = vanillaReach * vanillaReach;
         double maxDistance = VoxyConfig.CONFIG.createRenderDistance(VoxyConfig.CONFIG.distantLittleTilesMaxChunks);
         double maxDistanceSq = maxDistance * maxDistance;
         boolean bound = false;
@@ -193,7 +189,7 @@ public final class LittleTilesDistantRenderer implements LodPipelineHooks.Render
                 double dx = ox + 8.0 - viewport.cameraX;
                 double dy = oy + 8.0 - viewport.cameraY;
                 double dz = oz + 8.0 - viewport.cameraZ;
-                double handoffSq = hardFadeHandoff ? dx * dx + dy * dy + dz * dz : dx * dx + dz * dz;
+                double handoffSq = dx * dx + dz * dz;
                 if (handoffSq < handoffDistanceSq) continue;
                 if (dx * dx + dy * dy + dz * dz > maxDistanceSq) continue;
                 if (!DistantVisibility.isBoxVisible(viewport, ox, oy, oz, ox + 16, oy + 16, oz + 16)) continue;

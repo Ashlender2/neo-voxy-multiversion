@@ -8,7 +8,9 @@ layout(binding = 0, std140) uniform SceneUniform {
     float lodBoundaryFadeStart;
     float lodBoundaryFadeEnd;
     float framedBlocksMaxDistanceSquared;
-    vec4 worldCurveData;
+    vec2 worldCurveData;
+    float distantTracksEnabled;
+    float _scenePadding;
 };
 
 struct DrawCommand {

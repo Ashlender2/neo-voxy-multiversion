@@ -52,6 +52,7 @@ public final class LodPipelineHooks {
     }
 
     public static volatile FrameDebugProbe frameDebugProbe;
+    public static volatile boolean distantTrackMeshesReady;
 
     private static final List<Renderer> RENDERERS = new CopyOnWriteArrayList<>();
     private static final List<TranslucentRenderer> TRANSLUCENT_RENDERERS = new CopyOnWriteArrayList<>();

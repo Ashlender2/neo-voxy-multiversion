@@ -2,7 +2,7 @@ package me.cortex.voxy.client.compat.sable;
 
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
-import me.cortex.voxy.client.core.rendering.LodBoundaryFade;
+import net.minecraft.client.Minecraft;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
@@ -129,6 +129,7 @@ public final class SableScreenBounds {
 
     /** Radius within which no LOD geometry can appear, so nothing inside it needs depth merging. */
     public static double lodFreeRadiusBlocks() {
-        return Math.max(0.0D, LodBoundaryFade.getDistances().fadeStart() - LOD_FREE_MARGIN_BLOCKS);
+        double vanillaReach = Minecraft.getInstance().options.getEffectiveRenderDistance() * 16.0D;
+        return Math.max(0.0D, vanillaReach - LOD_FREE_MARGIN_BLOCKS);
     }
 }

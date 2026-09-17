@@ -222,6 +222,9 @@ void setupQuad(out QuadData quad, const in Quad rawQuad, uvec2 sPos, bool genera
         if (modelIsFramedBlocks(model)) {
             quad.attributeData.w |= 1u << 14u;
         }
+        if (modelIsCreateTrack(model)) {
+            quad.attributeData.w |= 1u << 15u;
+        }
     }
 
     vec4 faceSize = resolveFluidSideSize(model, rawQuad, face, getFaceSize(faceData), lodScale, lodLevel, fluidShape);

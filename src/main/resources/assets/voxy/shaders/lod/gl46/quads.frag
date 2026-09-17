@@ -95,6 +95,10 @@ bool useFramedBlocksDistance() {
     return ((interData.w >> 14u) & 1u) == 1u;
 }
 
+bool useDistantTrackReplacement() {
+    return ((interData.w >> 15u) & 1u) == 1u;
+}
+
 vec2 varyBalancedLeafUV(vec2 localUV, vec2 tile, out uint transform) {
     uvec2 tilePos = uvec2(max(tile, vec2(0.0f)));
     uint hash = interData.w >> 16u;
@@ -164,6 +168,12 @@ vec4 computeColour(vec2 texturePos, vec4 colour) {
 
 
 void main() {
+    if (distantTracksEnabled > 0.5
+            && useDistantTrackReplacement()
+            && boundaryDistanceSquared >= lodBoundaryFadeStart * lodBoundaryFadeStart) {
+        discard;
+        return;
+    }
     if (useFramedBlocksDistance() && boundaryDistanceSquared > framedBlocksMaxDistanceSquared) {
         discard;
         return;

@@ -63,10 +63,10 @@ public class ModelFactory {
     public static final int LAYERS = Integer.numberOfTrailingZeros(MODEL_TEXTURE_SIZE);
 
     // the fluid state in the mipper
-    private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean conservativeComplexModel, boolean completeComplexBlock) {
-        public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean conservativeComplexModel, boolean completeComplexBlock) {
+    private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean createTrack, boolean conservativeComplexModel, boolean completeComplexBlock) {
+        public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int fluidKind, int tintingColour, boolean framedBlocks, boolean createTrack, boolean conservativeComplexModel, boolean completeComplexBlock) {
             this(textures[0], textures[1], textures[2], textures[3], textures[4], textures[5], fluidBlockStateId, fluidKind, tintingColour,
-                    framedBlocks, conservativeComplexModel, completeComplexBlock);
+                    framedBlocks, createTrack, conservativeComplexModel, completeComplexBlock);
         }
     }
 
@@ -460,6 +460,15 @@ public class ModelFactory {
         }
     }
 
+    private static boolean isCreateTrack(BlockState state) {
+        for (Class<?> type = state.getBlock().getClass(); type != null; type = type.getSuperclass()) {
+            if (type.getName().equals("com.simibubi.create.content.trains.track.TrackBlock")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private ModelBakeResultUpload processTextureBakeResult(int blockId, BlockState blockState,
                                                            ColourDepthTextureData[] textureData,
                                                            boolean isShaded, boolean darkenedTinting,
@@ -519,6 +528,7 @@ public class ModelFactory {
         {//Deduplicate same entries
             entry = new ModelEntry(textureData, clientFluidStateId, fluidKind, isBiomeColourDependent||colourProvider==null?-1:captureColourConstant(colourProvider, colourState, DEFAULT_BIOME)|0xFF000000,
                     me.cortex.voxy.commonImpl.compat.FramedBlocksCompat.isFramedState(blockState),
+                    isCreateTrack(blockState),
                     conservativeComplexModel, completeComplexBlock);
             int possibleDuplicate = this.modelTexture2id.getInt(entry);
             if (possibleDuplicate != -1) {//Duplicate found
@@ -773,6 +783,7 @@ public class ModelFactory {
         modelFlags |= fluidHeight << 8;
         modelFlags |= isFluid ? 1 << 12 : 0;
         modelFlags |= entry.framedBlocks ? 1 << 13 : 0;
+        modelFlags |= entry.createTrack ? 1 << 14 : 0;
 
         //modelFlags |= blockRenderLayer == RenderLayer.getSolid()?0:1;// should discard alpha
         MemoryUtil.memPutInt(uploadPtr, modelFlags); uploadPtr += 4;

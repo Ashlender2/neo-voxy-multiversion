@@ -65,6 +65,10 @@ bool modelIsFramedBlocks(BlockModel model) {
     return ((model.flagsA)&8192u) != 0;
 }
 
+bool modelIsCreateTrack(BlockModel model) {
+    return ((model.flagsA)&16384u) != 0;
+}
+
 float modelFluidHeight(BlockModel model) {
     return float((model.flagsA >> 8u) & 31u) / 9.0;
 }

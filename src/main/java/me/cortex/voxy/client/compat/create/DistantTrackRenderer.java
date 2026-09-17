@@ -10,6 +10,7 @@ import com.simibubi.create.content.trains.track.TrackBlock;
 import com.simibubi.create.content.trains.track.TrackShape;
 import me.cortex.voxy.client.compat.LodPipelineHooks;
 import me.cortex.voxy.client.config.VoxyConfig;
+import me.cortex.voxy.client.core.rendering.LodBoundaryFade;
 import me.cortex.voxy.client.core.rendering.Viewport;
 import me.cortex.voxy.common.Logger;
 import net.minecraft.client.Minecraft;
@@ -102,8 +103,11 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
 
         double maxDist = cfg.createRenderDistance(cfg.distantTrackMaxChunks) + 64;
         double maxDistSq = maxDist * maxDist;
-        double beViewDist = mc.options.getEffectiveRenderDistance() * 16.0;
-        double beViewDistSq = beViewDist * beViewDist;
+        var boundary = LodBoundaryFade.getDistances();
+        double handoffDist = boundary.enabled()
+                ? boundary.fadeStart()
+                : mc.options.getEffectiveRenderDistance() * 16.0;
+        double handoffDistSq = handoffDist * handoffDist;
 
         DistantShaders.forPipeline(pipeline, false).bind();
         DistantShaders.bindTextures();
@@ -126,7 +130,8 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
                 if (distSq > maxDistSq) {
                     continue;
                 }
-                boolean vanillaDraws = distSq < beViewDistSq;
+                var m = unit.mesh;
+                boolean vanillaDraws = farthestDistanceSquared(unit, m, camX, camY, camZ) < handoffDistSq;
                 if (occlusionDebug) {
                     boolean rawCompiled = mc.levelRenderer.isSectionCompiled(unit.gate);
                     if (rawCompiled) {
@@ -139,7 +144,6 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
                 if (vanillaDraws) {
                     continue;
                 }
-                var m = unit.mesh;
                 if (viewport != null && !DistantVisibility.isBoxVisible(viewport,
                         unit.ox + m.minX, unit.oy + m.minY, unit.oz + m.minZ,
                         unit.ox + m.maxX, unit.oy + m.maxY, unit.oz + m.maxZ)) {
@@ -163,6 +167,14 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
         }
     }
 
+    private static double farthestDistanceSquared(MeshUnit unit, DistantMesh mesh,
+                                                  double camX, double camY, double camZ) {
+        double dx = Math.max(Math.abs(unit.ox + mesh.minX - camX), Math.abs(unit.ox + mesh.maxX - camX));
+        double dy = Math.max(Math.abs(unit.oy + mesh.minY - camY), Math.abs(unit.oy + mesh.maxY - camY));
+        double dz = Math.max(Math.abs(unit.oz + mesh.minZ - camZ), Math.abs(unit.oz + mesh.maxZ - camZ));
+        return dx * dx + dy * dy + dz * dz;
+    }
+
     @SubscribeEvent
     public void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         this.clearAll();
@@ -181,6 +193,7 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
     }
 
     private void clearAll() {
+        LodPipelineHooks.distantTrackMeshesReady = false;
         for (MeshUnit unit : this.units) {
             unit.close();
         }
@@ -274,6 +287,7 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
     }
 
     private void rebake(Minecraft mc, ResourceKey<Level> dimension) {
+        LodPipelineHooks.distantTrackMeshesReady = false;
         for (MeshUnit unit : this.units) {
             unit.close();
         }
@@ -342,6 +356,7 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
             this.bakeTurn(mc, turn.bc());
         }
         tileCount = this.units.size();
+        LodPipelineHooks.distantTrackMeshesReady = !this.units.isEmpty();
     }
 
     private record Turn(TrackGraph graph, TrackEdge edge, com.simibubi.create.content.trains.track.BezierConnection bc) {}
