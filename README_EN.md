@@ -17,28 +17,42 @@ Neo Voxy is maintained by **JohnSnow**. It continues [NHblock714/voxy](https://g
 
 | Edition | Install side | Renderer dependency | Java | Release file |
 |---|---|---|---:|---|
-| Minecraft 1.21.1 · NeoForge integrations | Client and server | Sodium 0.8.x / Iris 1.8.12+ | 21 | `neo-voxy-0.4.12-mc1.21.1-neoforge-integrations.jar` |
-| Minecraft 1.21.1 · NeoForge client | Client only | Sodium 0.8.x / Iris | 21 | `neo-voxy-0.3.0-mc1.21.1-neoforge-client.jar` |
-| Minecraft 1.20.1 · Forge client | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
-| Minecraft 26.1.2 · NeoForge client | Client only | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
+| Minecraft 1.21.1 · NeoForge | Client required, server optional | Sodium 0.8.x / Iris 1.8.12+ | 21 | `neo-voxy-0.5.1-mc1.21.1-neoforge.jar` |
+| Minecraft 1.20.1 · Forge | Client only | Embeddium / Oculus | 17 | `neo-voxy-0.3.5-mc1.20.1-forge-client.jar` |
+| Minecraft 26.1.2 · NeoForge | Client only | Sodium 0.9.1 / Iris 1.11.2+ | 25 | `neo-voxy-0.3.3-mc26.1.2-neoforge-client.jar` |
+
+## Installation and server compatibility (1.21.1)
+
+Starting with 0.5.0, 1.21.1 ships one JAR instead of separate integrations and client-only editions. Install it on the client to use distant rendering; optionally install the same JAR on the server. Dedicated servers do not need Sodium or Iris. Do not install both old editions together.
+
+- Without Neo Voxy on the server: local terrain LODs, shaders, caches, and client-side integrations remain available. No Neo Voxy subscription payload is sent to unsupported servers.
+- With the required negotiated channels: distant players and vehicles, Create trains, and moving-contraption poses can synchronize. Features lacking their required channels are disabled for that connection and unavailable in settings; saved preferences are retained for future supported connections.
+- Without server support, Create contraptions can still use locally captured static snapshots, but distant live movement is unavailable. Extended chunk requests apply only to the integrated single-player server.
+- Terrain LODs still depend on received or cached data. An optional server installation does not bypass server view distance to reveal unknown terrain. Other mods retain their own installation requirements.
+
+1.20.1 and 26.1.2 keep their existing platform builds and installation sides; this update does not add server features to them.
+
+## Experimental optimizations
+
+The experimental page groups stationary optimizations, GPU workload, memory caching, terrain transitions, and simplified shading. Options cover stationary reuse, occlusion precision, batched Hi-Z, and cache limits, with FPS, visual, latency, and memory tradeoffs explained. Hi-Z compilation failures fall back with a warning. Compare options individually; performance gains are hardware-dependent.
 
 ## Vanilla Features
 
-| Vanilla feature | 1.21.1 integrations | 1.21.1 client | 1.20.1 client | 26.1.2 client | Function |
-|---|:---:|:---:|:---:|:---:|---|
-| Terrain LODs and detail levels | ✅ | ✅ | ✅ | ✅ | Renders distant terrain |
-| Sodium / Embeddium settings integration | ✅ | ✅ | ✅ | ✅ | Provides the Neo Voxy settings entry |
-| Iris / Oculus shader pipeline | ✅ | ✅ | ✅ | ✅ | Provides shader rendering support for the platform |
-| Environmental fog, sky fog, and fluids | ✅ | ✅ | ✅ | ✅ | Renders distant fog and fluid effects |
-| Circular LOD handoff | ✅ | ✅ | ❌ | ✅ | Transitions between vanilla chunks and LODs |
-| Crossed ground plants | ✅ | ✅ | ✅ | ✅ | Uses lightweight crossed plant models |
-| Leaf LOD modes | ✅ | ✅ | ✅ | ✅ | Provides Fast, Balanced, and Quality modes |
-| Extended chunk requests | ✅ | ✅ | ✅ | ✅ | Requests farther chunks in single-player; disabled by default |
-| LOD biome water colours | ✅ | ✅ | ✅ | ✅ | Handles water-colour transitions between biomes |
-| LOD build-pressure control | ✅ | ✅ | ✅ | ✅ | Balances frame rate and build speed |
-| World curvature | ✅ | ✅ | ✅ | ✅ | Curves distant terrain in the GPU vertex stage |
-| Distant beacon beams | ✅ | — | — | — | Displays beacon beams at long range |
-| Extended-height world coordinates | ✅ | — | — | — | Supports LODs outside the vanilla height range |
+| Vanilla feature | 1.21.1 | 1.20.1 | 26.1.2 | Function |
+|---|:---:|:---:|:---:|---|
+| Terrain LODs and detail levels | ✅ | ✅ | ✅ | Renders distant terrain |
+| Sodium / Embeddium settings integration | ✅ | ✅ | ✅ | Provides the Neo Voxy settings entry |
+| Iris / Oculus shader pipeline | ✅ | ✅ | ✅ | Provides shader rendering support for the platform |
+| Environmental fog, sky fog, and fluids | ✅ | ✅ | ✅ | Renders distant fog and fluid effects |
+| Circular LOD handoff | ✅ | ❌ | ✅ | Transitions between vanilla chunks and LODs |
+| Crossed ground plants | ✅ | ✅ | ✅ | Uses lightweight crossed plant models |
+| Leaf LOD modes | ✅ | ✅ | ✅ | Provides Fast, Balanced, and Quality modes |
+| Extended chunk requests | ✅ | ✅ | ✅ | Requests farther chunks in single-player; disabled by default |
+| LOD biome water colours | ✅ | ✅ | ✅ | Handles water-colour transitions between biomes |
+| LOD build-pressure control | ✅ | ✅ | ✅ | Balances frame rate and build speed |
+| World curvature | ✅ | ✅ | ✅ | Curves distant terrain in the GPU vertex stage |
+| Distant beacon beams | ✅ | — | — | Displays beacon beams at long range |
+| Extended-height world coordinates | ✅ | — | — | Supports LODs outside the vanilla height range |
 
 `✅` means supported, `❌` means unavailable, and `—` means not applicable. When a shader pack provides its own LOD transition, disable either its transition or Neo Voxy's circular handoff.
 
@@ -65,7 +79,7 @@ Integrations activate only when the corresponding mod is installed. The version 
 - Extended chunk requests: requests chunks beyond vanilla view distance in single-player; disabled by default and capped at 48 chunks.
 - LOD build pressure: balances maximum frame rate and catch-up speed.
 - Circular LOD handoff: controls the transition between vanilla chunks and LODs; disable it when the shader pack provides its own transition.
-- Subdivision size: controls the detail threshold; lower values increase detail and cost.
+- Render precision: a seven-level slider from Very low to Very high; Standard (256) is the default, Medium-high uses 123, and Very high uses 28. Higher precision increases detail and cost. Leaves use a three-level Fast / Balanced / Quality slider.
 - World curvature: controls distant terrain curvature; 0 disables it.
 - Integration switches: each mod integration has its own enable switch and distance option.
 
@@ -74,8 +88,7 @@ Integrations activate only when the corresponding mod is installed. The version 
 Build one edition on Windows:
 
 ```powershell
-.\scripts\build.ps1 integrations-1.21.1
-.\scripts\build.ps1 client-1.21.1
+.\scripts\build.ps1 neoforge-1.21.1
 .\scripts\build.ps1 client-1.20.1
 .\scripts\build.ps1 client-26.1.2
 ```

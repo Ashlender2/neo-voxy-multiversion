@@ -11,6 +11,8 @@ layout(binding = 0, std140) uniform SceneUniform {
     vec2 worldCurveData;
     float distantTracksEnabled;
     float _scenePadding;
+    uint prevBuildFrameId;
+    uint visibilityGraceId;
 };
 
 struct DrawCommand {

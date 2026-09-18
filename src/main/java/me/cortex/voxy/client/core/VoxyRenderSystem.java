@@ -173,6 +173,9 @@ public class VoxyRenderSystem {
             }
 
             this.chunkBoundRenderer = new ChunkBoundRenderer(this.pipeline);
+            // A Voxy-only reload must repopulate the mask even when Sodium kept its render list.
+            var sodiumRenderer = net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer.instanceNullable();
+            if (sodiumRenderer != null) sodiumRenderer.scheduleTerrainUpdate();
 
             Logger.info("Voxy render system created with " + this.geometryData.getMaxCapacity() + " geometry capacity, using pipeline '" + this.pipeline.getClass().getSimpleName() + "' with renderer '" + sectionRenderer.getClass().getSimpleName() + "'");
         } catch (RuntimeException e) {
@@ -415,9 +418,11 @@ public class VoxyRenderSystem {
         TimingStatistics.E.start();
         GPUTiming.INSTANCE.marker("CB");
         if (!VoxyClient.disableSodiumChunkRender() && !IrisUtil.irisShadowActive()) {
+            me.cortex.voxy.common.world.WorldSection.setArrayPoolCapMiB(VoxyConfig.CONFIG.sectionArrayPoolMiB);
             this.chunkBoundRenderer.render(viewport);
         } else {
             viewport.depthBoundingBuffer.clear(this.properties.inverseClearDepth());
+            viewport.invalidateChunkMask();
         }
         TimingStatistics.E.stop();
 
@@ -597,6 +602,14 @@ public class VoxyRenderSystem {
         debug.add("Buf/Tex [#/Mb]: [" + GlBuffer.getCount() + "/" + (GlBuffer.getTotalSize()/1_000_000) + "],[" + GlTexture.getCount() + "/" + (GlTexture.getEstimatedTotalSize()/1_000_000)+"]");
         //Sodium-visible sections drive the hole-punch mask's fill cost (see the "CB" GPU marker)
         debug.add("Mask sections (sodium visible): " + this.chunkBoundRenderer.getLastRenderedSectionCount());
+        var maskView = this.viewportSelector.getViewport();
+        debug.add("mask " + maskView.chunkMaskWidth + "x" + maskView.chunkMaskHeight
+                + " | hiz " + maskView.hiZBuffer.describe());
+        debug.add("maskReuse: " + this.chunkBoundRenderer.describeReuseState());
+        debug.add("arrayPool: " + me.cortex.voxy.common.world.WorldSection.getReuseCacheCount() / 4.0
+                + "/" + VoxyConfig.CONFIG.sectionArrayPoolMiB + " MiB | miss "
+                + me.cortex.voxy.commonImpl.PerfStats.sectionArrayPoolMiss.sum()
+                + " overflow " + me.cortex.voxy.commonImpl.PerfStats.sectionArrayPoolOverflow.sum());
         {
             this.modelService.addDebugData(debug);
             this.renderGen.addDebugData(debug);

@@ -38,8 +38,35 @@ public final class WorldSection {
     }
 
 
-    private static final int ARRAY_REUSE_CACHE_SIZE = 400;//500;//32*32*32*8*ARRAY_REUSE_CACHE_SIZE == number of bytes
+    public static final int DEFAULT_ARRAY_POOL_ARRAYS = 400;
+    private static volatile int ARRAY_REUSE_CACHE_SIZE = DEFAULT_ARRAY_POOL_ARRAYS;//500;//32*32*32*8*ARRAY_REUSE_CACHE_SIZE == number of bytes
+
+    public static void setArrayPoolCapMiB(int miB) {
+        int arrays = Math.max(miB, 0) * 4;//4 arrays per MiB
+        if (arrays != ARRAY_REUSE_CACHE_SIZE) {
+            ARRAY_REUSE_CACHE_SIZE = arrays;
+            //A shrink has to release the excess itself: returns above the cap are discarded, but
+            //nothing takes from the pool while the camera is still, so it would stay full
+            trimArrayPool(arrays);
+        }
+    }
+
+    //Drops pooled arrays until at most `keep` remain. Poll-then-decrement, the same order as
+    //materialize(), so the count invariant holds against concurrent releasers.
+    public static void trimArrayPool(int keep) {
+        while (ARRAY_REUSE_CACHE_COUNT.get() > keep) {
+            if (ARRAY_REUSE_CACHE.poll() == null) {
+                break;
+            }
+            ARRAY_REUSE_CACHE_COUNT.decrementAndGet();
+        }
+    }
+    //TODO: maybe just swap this to a ConcurrentLinkedDeque
     private static final AtomicInteger ARRAY_REUSE_CACHE_COUNT = new AtomicInteger(0);
+
+    public static int getReuseCacheCount() {
+        return ARRAY_REUSE_CACHE_COUNT.get();
+    }
     private static final ConcurrentLinkedDeque<long[]> ARRAY_REUSE_CACHE = new ConcurrentLinkedDeque<>();
 
 
@@ -127,6 +154,7 @@ public final class WorldSection {
             long[] fresh = ARRAY_REUSE_CACHE.poll();
             if (fresh == null) {
                 fresh = new long[SECTION_VOLUME];
+                me.cortex.voxy.commonImpl.PerfStats.sectionArrayPoolMiss.increment();
             } else {
                 ARRAY_REUSE_CACHE_COUNT.decrementAndGet();
             }
@@ -230,9 +258,11 @@ public final class WorldSection {
             //Never materialised - nothing to return to the pool
             return;
         }
-        if (ARRAY_REUSE_CACHE_COUNT.get() < ARRAY_REUSE_CACHE_SIZE) {
+        if (ARRAY_REUSE_CACHE_COUNT.incrementAndGet() <= ARRAY_REUSE_CACHE_SIZE) {
             ARRAY_REUSE_CACHE.add(d);
-            ARRAY_REUSE_CACHE_COUNT.incrementAndGet();
+        } else {
+            ARRAY_REUSE_CACHE_COUNT.decrementAndGet();
+            me.cortex.voxy.commonImpl.PerfStats.sectionArrayPoolOverflow.increment();
         }
         this.data = null;
         this.uniformValue = Mapper.AIR;

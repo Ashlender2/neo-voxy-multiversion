@@ -3,6 +3,7 @@ package me.cortex.voxy.client.core;
 import me.cortex.voxy.client.RenderStatistics;
 import me.cortex.voxy.client.TimingStatistics;
 import me.cortex.voxy.client.VoxyClient;
+import me.cortex.voxy.client.config.VoxyConfig;
 import me.cortex.voxy.client.core.model.ModelBakerySubsystem;
 import me.cortex.voxy.client.core.rendering.Viewport;
 import me.cortex.voxy.client.core.rendering.hierachical.AsyncNodeManager;
@@ -53,6 +54,23 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
     private final HierarchicalOcclusionTraverser traversal;
 
     protected AbstractSectionRenderer<?,?> sectionRenderer;
+
+    //Command-list hold state (experimentalCmdListHold). lastBuildMVP and lastBuildCam* are the
+    //camera the current command lists were built for. The MVP carries rotation and projection
+    //only - the translation lives in viewport.section/innerTranslation - so the position must be
+    //keyed separately or a straight-line flight would count as a still camera. hasBuiltCommandLists
+    //guards the first frame - the identity-initialised matrix must never pass the compare on its own.
+    private final Matrix4f lastBuildMVP = new Matrix4f();
+    private double lastBuildCamX, lastBuildCamY, lastBuildCamZ;
+    //Vanilla folds the decaying view bob into the projection for ~10 s after the player stops, so a
+    //bit-exact MVP compare would keep the hold off for that long. The tolerance is far below a
+    //pixel and the baseline is the last BUILD, so drift cannot accumulate past it.
+    private static final float HOLD_MVP_TOLERANCE = 1.0e-6f;
+    private boolean hasBuiltCommandLists;
+    private Viewport<?> lastBuildViewport;
+    private int lastBuildWidth, lastBuildHeight;
+    private int consecutiveHolds;
+    private long heldFrameCount, builtFrameCount;
 
     private final FullscreenBlit depthStencilSetup;
     private final FullscreenBlit sentinelRestore;
@@ -108,20 +126,47 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         GPUTiming.INSTANCE.marker("RO");
         rs.renderOpaque(viewport);
         var occlusionDebug = VoxyClient.getOcclusionDebugState();
+        boolean built = true;
         if (occlusionDebug==0) {
             GPUTiming.INSTANCE.marker("I");
-            this.innerPrimaryWork(viewport, depthTexture);
+            built = this.innerPrimaryWork(viewport, depthTexture);
             GPUTiming.INSTANCE.marker();
         }
 
-        if (occlusionDebug<=1) {
-            TimingStatistics.G.start();
-            rs.buildDrawCalls(viewport);
-            TimingStatistics.G.stop();
-        }
+        if (built) {
+            if (occlusionDebug<=1) {
+                TimingStatistics.G.start();
+                rs.buildDrawCalls(viewport);
+                TimingStatistics.G.stop();
+            }
 
-        GPUTiming.INSTANCE.marker("TP");
-        rs.renderTemporal(viewport);
+            GPUTiming.INSTANCE.marker("TP");
+            rs.renderTemporal(viewport);
+
+            //Advanced only after buildDrawCalls consumed the old value: the occlusion raster inside
+            //it compares visibility stamps against the PREVIOUS build's frameId, then restamps with
+            //the current one - which becomes the baseline for the next build.
+            viewport.prevBuildFrameId = viewport.frameId;
+            this.lastBuildMVP.set(viewport.MVP);
+            this.lastBuildCamX = viewport.cameraX;
+            this.lastBuildCamY = viewport.cameraY;
+            this.lastBuildCamZ = viewport.cameraZ;
+            this.hasBuiltCommandLists = true;
+            this.lastBuildViewport = viewport;
+            this.lastBuildWidth = viewport.width;
+            this.lastBuildHeight = viewport.height;
+            this.consecutiveHolds = 0;
+            this.builtFrameCount++;
+        } else {
+            //Held frame: renderOpaque above already replayed the previous command lists (they draw
+            //the identical scene - same camera, same geometry), and the translucent draw below
+            //replays its lane the same way. The temporal pass is skipped outright: it exists to
+            //paper over sections whose visibility CHANGED this frame, and on a held frame nothing
+            //did.
+            this.consecutiveHolds++;
+            this.heldFrameCount++;
+
+        }
 
         rs.postOpaquePreperation(viewport);
 
@@ -249,11 +294,24 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         glDisable(GL_DEPTH_TEST);
     }
 
-    protected void innerPrimaryWork(Viewport<?> viewport, int depthBuffer) {
+    protected boolean innerPrimaryWork(Viewport<?> viewport, int depthBuffer) {
+        //All hold conditions are evaluated against the LAST BUILD, not the last frame: the command
+        //lists being reused are the last build's, so drift accumulates against that baseline.
+        //Camera position is compared exactly (a still entity lerps to the identical value); any
+        //translation, rotation, fov change or projection-jittering shader pack fails the key and
+        //forces a build, which is the safe direction.
+        boolean holdEligible = VoxyConfig.CONFIG.experimentalCmdListHold
+                && this.hasBuiltCommandLists
+                && this.lastBuildViewport == viewport
+                && this.lastBuildWidth == viewport.width && this.lastBuildHeight == viewport.height
+                && this.consecutiveHolds < VoxyConfig.CONFIG.cmdListHoldMaxFrames - 1
+                && viewport.cameraX == this.lastBuildCamX
+                && viewport.cameraY == this.lastBuildCamY
+                && viewport.cameraZ == this.lastBuildCamZ
+                && viewport.MVP.equals(this.lastBuildMVP, HOLD_MVP_TOLERANCE);
 
-        //Compute the mip chain
-        viewport.hiZBuffer.buildMipChain(depthBuffer, viewport.width, viewport.height);
-
+        boolean built = false;
+        boolean mipChainBuilt = false;
         do {
             TimingStatistics.main.stop();
             TimingStatistics.dynamic.start();
@@ -263,19 +321,50 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
             DownloadStream.INSTANCE.tick();
             TimingStatistics.D.stop();
 
-            this.nodeManager.tick(this.traversal.getNodeBuffer(), this.nodeCleaner);
+            //Ticked on held frames too - this drains worker results and issues the geometry
+            //uploads. Consuming ANY result set is a hard build trigger, not a heuristic: commands
+            //bake baseVertex offsets into the geometry arena, and the moves/frees in a consumed
+            //batch leave held command lists pointing at stale memory.
+            if (this.nodeManager.tick(this.traversal.getNodeBuffer(), this.nodeCleaner)) {
+                holdEligible = false;
+            }
+            //glFlush();
 
-            this.nodeCleaner.tick(this.traversal.getNodeBuffer());//Probably do this here??
+            this.traversal.tickRequestClock();
+            if (!holdEligible) {
+                //The cleaner's visibilityId is the LRU clock the traversal stamps rendered nodes
+                //with; a held frame renders the same nodes again, so the clock only ticks on
+                //frames that traverse. The eviction it queues lands through nodeManager.tick,
+                //which forces a build by itself.
+                this.nodeCleaner.tick(this.traversal.getNodeBuffer());//Probably do this here??
+            }
 
             TimingStatistics.dynamic.stop();
             TimingStatistics.main.start();
 
-            glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_PIXEL_BUFFER_BARRIER_BIT);
+            if (!holdEligible) {
+                if (!mipChainBuilt) {
+                    //Compute the mip chain
+                    GPUTiming.INSTANCE.marker("HZ");
+                    viewport.hiZBuffer.buildMipChain(depthBuffer, viewport.width, viewport.height);
+                    mipChainBuilt = true;
+                }
+                GPUTiming.INSTANCE.marker("TV");
 
-            TimingStatistics.F.start();
-            this.traversal.doTraversal(viewport);
-            TimingStatistics.F.stop();
-        } while (this.frexStillHasWork.getAsBoolean());
+                glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_PIXEL_BUFFER_BARRIER_BIT);
+
+                TimingStatistics.F.start();
+                this.traversal.doTraversal(viewport);
+                TimingStatistics.F.stop();
+                built = true;
+            }
+
+            if (!this.frexStillHasWork.getAsBoolean()) break;
+            //frex signals it needs further traversal passes; a held frame never traverses, so
+            //honouring the hold here would spin this loop with no way for that work to finish
+            holdEligible = false;
+        } while (true);
+        return built;
     }
 
     @Override
@@ -291,6 +380,8 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         this.sectionRenderer.addDebug(debug);
         this.traversal.addDebug(debug);
         RenderStatistics.addDebug(debug);
+        debug.add("cmdHold: " + VoxyConfig.CONFIG.experimentalCmdListHold + " held " + this.heldFrameCount
+                + " built " + this.builtFrameCount + " run " + this.consecutiveHolds);
     }
 
     //Binds the framebuffer and any other bindings needed for rendering

@@ -469,13 +469,13 @@ public class AsyncNodeManager {
 
     private IntConsumer tlnAddCallback; private IntConsumer tlnRemoveCallback;
     //Render thread synchronization
-    public void tick(GlBuffer nodeBuffer, NodeCleaner cleaner) {
+    public boolean tick(GlBuffer nodeBuffer, NodeCleaner cleaner) {
         if (this.uncaughtException != null) {
             throw new RuntimeException(this.uncaughtException);//Propagate internal exception
         }
         var results = (SyncResults)RESULT_HANDLE.getAndSet(this, null);//Acquire the results
         if (results == null) {//There are no new results to process, return
-            return;
+            return false;
         }
 
         //top level node add/remove
@@ -564,6 +564,7 @@ public class AsyncNodeManager {
                 throw new IllegalStateException("Could not insert result into cache");
             }
         }
+        return true;
     }
 
 

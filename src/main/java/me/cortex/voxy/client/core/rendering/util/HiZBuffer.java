@@ -20,7 +20,7 @@ import static org.lwjgl.opengl.GL42C.GL_FRAMEBUFFER_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42C.glMemoryBarrier;
 import static org.lwjgl.opengl.GL45C.glTextureBarrier;
 
-public class HiZBuffer {
+public class HiZBuffer implements HiZBufferAccess {
     private final Shader hiz;
     private final GlFramebuffer fb = new GlFramebuffer().name("HiZ");
     private final int sampler = glGenSamplers();

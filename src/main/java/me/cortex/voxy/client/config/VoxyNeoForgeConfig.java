@@ -45,9 +45,8 @@ public class VoxyNeoForgeConfig {
             .defineInRange("serviceThreads", Math.max((int) (CpuLayout.getCoreCount() / 1.5), 1), 1, CpuLayout.getCoreCount());
 
     private static final ModConfigSpec.DoubleValue SUB_DIVISION_SIZE = BUILDER
-            .comment("Subdivision size for LOD rendering (28-256)",
-                     "Lower = more detailed LODs but more GPU load")
-            .defineInRange("subDivisionSize", 123.0, 28.0, 256.0);
+            .comment("Render precision presets: 1024, 768, 512, 256 (default), 123, 64, 28. Lower values give more detail.")
+            .defineInRange("subDivisionSize", 256.0, VoxyConfig.MIN_SUBDIVISION_SIZE, VoxyConfig.MAX_SUBDIVISION_SIZE);
 
     private static final ModConfigSpec.BooleanValue USE_ENVIRONMENTAL_FOG = BUILDER
             .comment("Apply environmental fog to LOD terrain")

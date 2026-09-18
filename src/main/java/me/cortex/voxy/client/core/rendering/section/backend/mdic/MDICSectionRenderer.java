@@ -55,8 +55,11 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
     private final Shader terrainShader;
     private final Shader translucentTerrainShader;
 
+    private final boolean opaqueNearFirst = me.cortex.voxy.client.config.VoxyConfig.CONFIG.experimentalOpaqueNearFirst;
+    private final boolean chunkMaskHalfRes = me.cortex.voxy.client.config.VoxyConfig.CONFIG.experimentalChunkMaskHalfRes;
     private final Shader commandGenShader = Shader.make()
             .define("TRANSLUCENT_WRITE_BASE", 1024)
+            .defineIf("OPAQUE_NEAR_FIRST", this.opaqueNearFirst)
             .define("TEMPORAL_OFFSET", TEMPORAL_OFFSET)
 
             .define("TRANSLUCENT_DISTANCE_BUFFER_BINDING", 7)
@@ -80,7 +83,8 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
 
     private final Shader translucentGenShader = Shader.make()
             .add(ShaderType.COMPUTE, "voxy:lod/gl46/buildtranslucents.comp")
-            .define("TRANSLUCENT_WRITE_BASE", 1024)//The size of the prefix sum array
+            .define("TRANSLUCENT_WRITE_BASE", 1024)
+            .defineIf("OPAQUE_NEAR_FIRST", this.opaqueNearFirst)//The size of the prefix sum array
             .define("TRANSLUCENT_DISTANCE_BUFFER_BINDING", 5)
             .define("TRANSLUCENT_OFFSET", TRANSLUCENT_OFFSET)
 
@@ -112,6 +116,7 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
                 .apply(this.properties::apply)
                 .defineIf("TAA_PATCH", taa != null)
                 .defineIf("DEBUG_RENDER", false)
+                .defineIf("CHUNK_MASK_HALF_RES", this.chunkMaskHalfRes)
 
 
                 //.defineIf("USE_NV_BARRY", Capabilities.INSTANCE.nvBarryCoords)
@@ -180,6 +185,9 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
                 && me.cortex.voxy.client.compat.LodPipelineHooks.distantTrackMeshesReady;
         MemoryUtil.memPutFloat(ptr, distantTracksReady ? 1.0f : 0.0f); ptr += 4;
         MemoryUtil.memPutFloat(ptr, 0.0f); ptr += 4;
+        MemoryUtil.memPutInt(ptr, viewport.prevBuildFrameId & 0x7fffffff); ptr += 4;
+        MemoryUtil.memPutInt(ptr, me.cortex.voxy.client.config.VoxyConfig.CONFIG.experimentalCmdListHold
+                ? viewport.prevBuildFrameId & 0x7fffffff : 0); ptr += 4;
 
         UploadStream.INSTANCE.commit();
     }
@@ -387,11 +395,12 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
     @Override
     public void addDebug(List<String> lines) {
         super.addDebug(lines);
+        lines.add("opaqueNearFirst: " + this.opaqueNearFirst);
     }
 
     @Override
     public MDICViewport createViewport() {
-        return new MDICViewport(this.properties, this.geometryManager.getMaxSectionCount());
+        return new MDICViewport(this.properties, this.geometryManager.getMaxSectionCount(), this.chunkMaskHalfRes);
     }
 
     @Override

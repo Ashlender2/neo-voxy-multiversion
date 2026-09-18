@@ -59,6 +59,7 @@ public final class DistantTrainManager {
     public static volatile int bakesFailed;
 
     public static void handleShape(CarriageShapePayload payload) {
+        if (!me.cortex.voxy.client.ServerCapabilities.trains()) return;
         shapesReceived++;
         try {
             var existing = SHAPES.remove(payload.shapeId());
@@ -95,6 +96,7 @@ public final class DistantTrainManager {
     }
 
     public static void handlePoses(TrainPosesPayload payload) {
+        if (!me.cortex.voxy.client.ServerCapabilities.trains()) return;
         if (payload.carriages().isEmpty()) {
             removeTrain(payload.trainId());
             return;

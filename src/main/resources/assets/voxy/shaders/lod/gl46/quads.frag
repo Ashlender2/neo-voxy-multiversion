@@ -252,7 +252,12 @@ void main() {
     bool useChunkBounds = circularLodBoundaryEnabled < 0.5;
     #endif
     if (useChunkBounds) {
-        if (DEPTH_SCALAR_COMPARE(gl_FragCoord.z, texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r)) {
+        #ifdef CHUNK_MASK_HALF_RES
+        ivec2 maskCoord = ivec2(gl_FragCoord.xy) >> 1;
+        #else
+        ivec2 maskCoord = ivec2(gl_FragCoord.xy);
+        #endif
+        if (DEPTH_SCALAR_COMPARE(gl_FragCoord.z, texelFetch(depthTex, maskCoord, 0).r)) {
             discard;
             return;
         }

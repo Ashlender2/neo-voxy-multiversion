@@ -238,7 +238,11 @@ public class HierarchicalOcclusionTraverser {
         //shader divided into every node's stretch. Precompute it here so shouldDecend drops a per-node
         //pow() and just reads this uniform.
         MemoryUtil.memPutFloat(ptr, (float) Math.pow(1.0 + (double) invP00 * invP00 + (double) invP11 * invP11, 1.5));ptr += 4;
+        MemoryUtil.memPutInt(ptr, this.requestClock); ptr += 4;
     }
+
+    private int requestClock;
+    public void tickRequestClock() { this.requestClock++; }
 
     private void bindings(Viewport<?> viewport) {
         glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, this.queueMetaBuffer.id);

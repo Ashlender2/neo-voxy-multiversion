@@ -31,7 +31,9 @@ public class VoxyConfig {
     public static final int MAX_REQUEST_DISTANCE = 48;
     public static final int MAX_CLOUD_DISTANCE = 128;
     public static final float MIN_SUBDIVISION_SIZE = 28.0f;
-    public static final float MAX_SUBDIVISION_SIZE = 256.0f;
+    public static final float MAX_SUBDIVISION_SIZE = 1024.0f;
+    public static final int DEFAULT_RENDER_QUALITY_LEVEL = 3;
+    private static final float[] RENDER_QUALITY_SIZES = {1024, 768, 512, 256, 123, 64, 28};
 
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -80,7 +82,7 @@ public class VoxyConfig {
     // "water" blends pure fluids; "water_grass" also blends grass and foliage.
     public String biomeBlendScope = "water";
     public int serviceThreads = (int) Math.max(CpuLayout.getCoreCount()/1.5, 1);
-    public float subDivisionSize = 123;
+    public float subDivisionSize = RENDER_QUALITY_SIZES[DEFAULT_RENDER_QUALITY_LEVEL];
     public int skyFogDistance = 96;
     public float fogIntensity = 1.0f;
     public float fogDensity = 0.0f;
@@ -106,6 +108,14 @@ public class VoxyConfig {
     public boolean shareFarPlayerPosition = true;
     public boolean joinMessageShown = false;
     public boolean upgradeCleanupNoticeShown = false;
+    // Experimental shared-memory Hi-Z reduction. The draw chain remains the default when disabled.
+    public boolean experimentalHiZCompute = false;
+    public boolean experimentalCmdListHold = false;
+    public int cmdListHoldMaxFrames = 4;
+    public boolean experimentalChunkMaskReuse = false;
+    public int sectionArrayPoolMiB = 100;
+    public boolean experimentalOpaqueNearFirst = false;
+    public boolean experimentalChunkMaskHalfRes = false;
 
     public int getRequestDistance() {
         return Math.clamp(this.requestDistance, MIN_REQUEST_DISTANCE, MAX_REQUEST_DISTANCE);
@@ -120,6 +130,26 @@ public class VoxyConfig {
             this.renderPressure = 2;
         }
         return this.renderPressure;
+    }
+
+    public int getRenderQualityLevel() {
+        if (!Float.isFinite(this.subDivisionSize) || this.subDivisionSize <= 0) {
+            return DEFAULT_RENDER_QUALITY_LEVEL;
+        }
+        int closest = 0;
+        double distance = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < RENDER_QUALITY_SIZES.length; i++) {
+            double candidate = Math.abs(Math.log(this.subDivisionSize / RENDER_QUALITY_SIZES[i]));
+            if (candidate < distance) {
+                closest = i;
+                distance = candidate;
+            }
+        }
+        return closest;
+    }
+
+    public void setRenderQualityLevel(int level) {
+        this.subDivisionSize = RENDER_QUALITY_SIZES[Math.clamp(level, 0, RENDER_QUALITY_SIZES.length - 1)];
     }
 
     public LeafLodMode getLeafLodMode() {
@@ -194,8 +224,11 @@ public class VoxyConfig {
     }
 
     public void sanitize() {
+        this.cmdListHoldMaxFrames = Math.clamp(this.cmdListHoldMaxFrames, 2, 60);
+        this.sectionArrayPoolMiB = Math.clamp(this.sectionArrayPoolMiB, 25, 1024);
+        me.cortex.voxy.common.world.WorldSection.setArrayPoolCapMiB(this.sectionArrayPoolMiB);
         this.sectionRenderDistance = Math.clamp(this.sectionRenderDistance, 2.0f, 64.0f);
-        this.subDivisionSize = Math.clamp(this.subDivisionSize, MIN_SUBDIVISION_SIZE, MAX_SUBDIVISION_SIZE);
+        this.setRenderQualityLevel(this.getRenderQualityLevel());
         this.requestDistance = Math.clamp(this.requestDistance, MIN_REQUEST_DISTANCE, MAX_REQUEST_DISTANCE);
         // Older builds measured this percentage against one sixteenth of the LOD radius.
         if (this.fogDistancePercent > 200) {

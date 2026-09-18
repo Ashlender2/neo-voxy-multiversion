@@ -30,6 +30,7 @@ public final class TrainHandover {
         var config = me.cortex.voxy.client.config.VoxyConfig.CONFIG;
         var dimension = entity.level().dimension().location();
         if (!config.isRenderingEnabled() || !config.distantTrains
+                || !me.cortex.voxy.client.ServerCapabilities.trains()
                 || !DistantTrainManager.hasRenderable(entity.trainId, entity.carriageIndex, dimension)) {
             return false;
         }

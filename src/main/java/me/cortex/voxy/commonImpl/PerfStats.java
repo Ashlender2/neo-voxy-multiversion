@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.LongAdder;
 
 public final class PerfStats {
     private PerfStats() {}
+    public static final LongAdder sectionArrayPoolMiss = new LongAdder();
+    public static final LongAdder sectionArrayPoolOverflow = new LongAdder();
 
     //--- ingest hot path ---
     //Biome id resolution: a hit skipped a ResourceLocation.toString() + registry lookup (64x/section)

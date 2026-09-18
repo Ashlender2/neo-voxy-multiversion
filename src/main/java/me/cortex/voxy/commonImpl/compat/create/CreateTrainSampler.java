@@ -158,6 +158,7 @@ public final class CreateTrainSampler {
             }
         }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!player.connection.hasChannel(ContraptionPosesPayload.TYPE)) continue;
             var source = movingByDimension.get(player.level().dimension());
             if (source == null) {
                 continue;
@@ -273,6 +274,8 @@ public final class CreateTrainSampler {
         double streamMaxSq = streamMax * streamMax;
         Map<PoseKey, CarriagePose> poseRoundCache = new java.util.HashMap<>();
         for (ServerPlayer player : players) {
+            if (!player.connection.hasChannel(CarriageShapePayload.TYPE)
+                    || !player.connection.hasChannel(TrainPosesPayload.TYPE)) continue;
             var playerDim = player.level().dimension();
             var playerPos = player.position();
             var nowVisible = new HashSet<UUID>();
@@ -347,7 +350,7 @@ public final class CreateTrainSampler {
     }
 
     private void sendRemovals(ServerPlayer player, Set<UUID> previous, Set<UUID> current) {
-        if (previous == null) {
+        if (previous == null || !player.connection.hasChannel(TrainPosesPayload.TYPE)) {
             return;
         }
         var shapesByTrain = this.sentShapes.get(player.getUUID());

@@ -72,7 +72,8 @@ public final class DistantTrainRenderer implements LodPipelineHooks.Renderer {
             return;
         }
         var cfg = VoxyConfig.CONFIG;
-        if (!cfg.isRenderingEnabled() || !cfg.distantTrains) {
+        if (!cfg.isRenderingEnabled() || !cfg.distantTrains
+                || !me.cortex.voxy.client.ServerCapabilities.trains()) {
             return;
         }
         var mc = Minecraft.getInstance();

@@ -301,6 +301,7 @@ public final class DistantContraptionManager {
     }
 
     public static void handleRemotePoses(ContraptionPosesPayload payload) {
+        if (!me.cortex.voxy.client.ServerCapabilities.supports(ContraptionPosesPayload.TYPE)) return;
         long now = System.nanoTime();
         for (ContraptionPose pose : payload.poses()) {
             REMOTE_POSES.compute(pose.id(), (id, track) -> {
