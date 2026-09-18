@@ -1,5 +1,19 @@
 Neo Voxy 更新日志 / Changelog
 
+## 0.5.2（1.21.1 NeoForge）— 2026-09-18
+
+### 简体中文
+
+- 修正 Copycats 等专属远景网格未应用光影 TAA 抖动的问题，使其颜色与深度位置和普通 LOD 保持一致，针对远处边缘发虚、透出背景的问题。
+- Copycats 不透明绘制显式关闭颜色混合，保留玻璃等材质的透明绘制路径。
+- 针对 Complementary Unbound r5.9.3 核对光影接口；离屏 GPU 着色器链接与 40 项顶点位置检查通过，具体游戏场景仍需复测。
+
+### English
+
+- Applied shader-pack TAA jitter to dedicated distant meshes, including Copycats, aligning their color and depth positions with ordinary LODs to address distant edge ghosting and background bleed.
+- Explicitly disabled blending for opaque Copycat meshes while retaining the translucent path for glass and similar materials.
+- Checked the Complementary Unbound r5.9.3 shader interface. Offscreen shader linking and 40 GPU vertex-position checks passed; the reported in-game scene still needs verification.
+
 ## 0.5.1（1.21.1 NeoForge）— 2026-09-18
 
 ### 简体中文

@@ -31,8 +31,15 @@ layout(location = 3) flat out uint fFace;
 layout(location = 4) out vec4 fColor;
 layout(location = 5) flat out uint fCustomId;
 
+#ifdef PATCHED_SHADER
+vec2 distantTaaShift();
+#endif
+
 void main() {
     gl_Position = uTransform * vec4(aPos, 1.0);
+    #ifdef PATCHED_SHADER
+    gl_Position.xy += distantTaaShift() * gl_Position.w;
+    #endif
     fUv = aUv;
     fColor = aColor;
     fCustomId = aCustomId;

@@ -184,6 +184,8 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
                         glEnable(GL_BLEND);
                         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
                                 GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                    } else {
+                        glDisable(GL_BLEND);
                     }
                     glEnable(GL_STENCIL_TEST);
                     glStencilFunc(GL_ALWAYS, 3, 0xFF);

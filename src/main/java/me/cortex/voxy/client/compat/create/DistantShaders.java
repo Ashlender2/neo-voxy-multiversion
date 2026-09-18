@@ -94,7 +94,7 @@ public final class DistantShaders {
                     if (fragment != null) {
                         patchedTranslucentVertexLight = Shader.make()
                                 .define("PATCHED_SHADER").define("TRANSLUCENT")
-                                .add(ShaderType.VERTEX, "voxy:compat/distant.vert")
+                                .addSource(ShaderType.VERTEX, patchedVertex(pipeline))
                                 .addSource(ShaderType.FRAGMENT, fragment)
                                 .compile().name("distant_patched_translucent_vertex");
                     }
@@ -119,9 +119,15 @@ public final class DistantShaders {
         return Shader.make()
                 .define("PATCHED_SHADER")
                 .defineIf("UNIFORM_LIGHT", uniformLightVariant)
-                .add(ShaderType.VERTEX, "voxy:compat/distant.vert")
+                .addSource(ShaderType.VERTEX, patchedVertex(pipeline))
                 .addSource(ShaderType.FRAGMENT, frag)
                 .compile().name(uniformLightVariant ? "distant_patched_uniform" : "distant_patched_vertex");
+    }
+
+    private static String patchedVertex(AbstractRenderPipeline pipeline) {
+        String source = ShaderLoader.parse("voxy:compat/distant.vert");
+        String taa = pipeline.taaFunction("distantTaaShift");
+        return source + "\n" + (taa != null ? taa : "vec2 distantTaaShift() { return vec2(0.0); }");
     }
 
     private static void freePatched() {
