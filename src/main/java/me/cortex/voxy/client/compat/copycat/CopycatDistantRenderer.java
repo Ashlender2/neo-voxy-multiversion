@@ -47,6 +47,7 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
     private int lastScanX = Integer.MIN_VALUE;
     private int lastScanZ = Integer.MIN_VALUE;
     private int lastMaxChunks = Integer.MIN_VALUE;
+    private int depthSampler;
 
     public CopycatDistantRenderer() {
         active = this;
@@ -123,6 +124,8 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
 
     @SubscribeEvent
     public void logout(ClientPlayerNetworkEvent.LoggingOut event) {
+        if (this.depthSampler != 0) org.lwjgl.opengl.GL33C.glDeleteSamplers(this.depthSampler);
+        this.depthSampler = 0;
         clearMeshes();
         this.updates.clear();
         this.storage = null;
@@ -155,6 +158,7 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
         double maxDistance = VoxyConfig.CONFIG.createRenderDistance(VoxyConfig.CONFIG.distantCopycatsMaxChunks);
         double maxDistanceSq = maxDistance * maxDistance;
         boolean bound = false;
+        int previousSampler = org.lwjgl.opengl.GL30C.glGetIntegeri(org.lwjgl.opengl.GL33C.GL_SAMPLER_BINDING, 2);
         var transform = new Matrix4f();
         try {
             for (var item : this.sections.entrySet()) {
@@ -173,9 +177,9 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
                 if (!DistantVisibility.isBoxVisible(viewport, ox - 4, oy - 4, oz - 4,
                         ox + 20, oy + 20, oz + 20)) continue;
                 if (!bound) {
-                    (translucent ? DistantShaders.forTranslucentPipeline(pipeline)
-                            : DistantShaders.forPipeline(pipeline, false)).bind();
+                    DistantShaders.forCopycatPipeline(pipeline, translucent).bind();
                     DistantShaders.bindTextures();
+                    bindTerrainDepth(pipeline, viewport);
                     glEnable(GL_DEPTH_TEST);
                     glDepthFunc(depthFunc);
                     glDepthMask(!translucent);
@@ -202,11 +206,36 @@ public final class CopycatDistantRenderer implements LodPipelineHooks.Renderer, 
                 glUseProgram(0);
             }
         } finally {
+            org.lwjgl.opengl.GL33C.glBindSampler(2, previousSampler);
             if (bound) {
                 glStencilFunc(GL_EQUAL, 1, 0x1);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
             }
         }
+    }
+
+    private void bindTerrainDepth(me.cortex.voxy.client.core.AbstractRenderPipeline pipeline, Viewport<?> viewport) {
+        if (this.depthSampler == 0) {
+            this.depthSampler = org.lwjgl.opengl.GL33C.glGenSamplers();
+            org.lwjgl.opengl.GL33C.glSamplerParameteri(this.depthSampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            org.lwjgl.opengl.GL33C.glSamplerParameteri(this.depthSampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            org.lwjgl.opengl.GL33C.glSamplerParameteri(this.depthSampler, GL_TEXTURE_WRAP_S, org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE);
+            org.lwjgl.opengl.GL33C.glSamplerParameteri(this.depthSampler, GL_TEXTURE_WRAP_T, org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE);
+        }
+        org.lwjgl.opengl.GL45C.glBindTextureUnit(2, pipeline.debugSourceDepthTex());
+        org.lwjgl.opengl.GL33C.glBindSampler(2, this.depthSampler);
+        var inverseSource = new Matrix4f(viewport.vanillaProjection).mul(viewport.modelView).invert();
+        var transform = new Matrix4f(viewport.MVP).mul(inverseSource);
+        try (var stack = org.lwjgl.system.MemoryStack.stackPush()) {
+            org.lwjgl.opengl.GL20C.glUniformMatrix4fv(8, false, transform.get(stack.mallocFloat(16)));
+        }
+        boolean halfNdc = me.cortex.voxy.client.core.RenderProperties.windowIsHalfNdc();
+        org.lwjgl.opengl.GL20C.glUniform4f(12, halfNdc ? 0.5f : 1.0f, halfNdc ? 0.5f : 0.0f,
+                halfNdc ? 2.0f : 1.0f, halfNdc ? -1.0f : 0.0f);
+        org.lwjgl.opengl.GL20C.glUniform4f(13, viewport.width, viewport.height,
+                (float) viewport.width / pipeline.debugSrcWidth(),
+                (float) viewport.height / pipeline.debugSrcHeight());
+        org.lwjgl.opengl.GL20C.glUniform1i(14, pipeline.properties.isReverseZ() ? 1 : 0);
     }
 
     private void drainUpdates(int limit) {

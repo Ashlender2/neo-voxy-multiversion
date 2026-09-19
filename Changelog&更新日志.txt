@@ -1,5 +1,33 @@
 Neo Voxy 更新日志 / Changelog
 
+## 维护约定 / Maintenance conventions
+
+- 1.21.1 基础版本保持 0.5.0，使用 `0.5.0-alpha.N`；小修复递增 alpha 序号，稳定版本变更按后续要求执行。
+- 重要功能或模组联动更新同步维护中英文 README；所有发布改动（包括小更新）在本文件记录中英文日志。
+- 代码注释保持简洁，无需解释的代码不加注释。
+- 1.21.1 只维护统一版本：客户端必装、服务端可选；双端功能按已协商通道启用，不向不支持的连接发送自定义数据。
+- 删除独立的 AGENTS.md，维护约定统一记录于本文件。
+
+- Keep the 1.21.1 base version at 0.5.0 with `0.5.0-alpha.N`; increment the alpha number for small fixes and follow subsequent instructions for stable releases.
+- Update both READMEs for major features or integrations; record all release changes, including small updates, here in Chinese and English.
+- Keep code comments concise and omit unnecessary comments.
+- Maintain one 1.21.1 build: client required, server optional. Enable two-sided features only on negotiated channels; never send custom payloads to unsupported connections.
+- Remove the separate AGENTS.md and keep maintenance conventions in this changelog.
+
+## 0.5.0-alpha.1（1.21.1 NeoForge）— 2026-09-19
+
+### 简体中文
+
+- 按新的版本规则固定基础版本为 0.5.0，后续小修复递增 alpha 序号；此前 0.5.1/0.5.2 测试改动保留。
+- 为 Copycats 专属远景网格加入独立的原版地形深度检查，避免远近景交接清除深度后，网格仍透过前方地形显示；不透明与透明材质均应用遮挡判断。
+- 核对本地 Complementary Unbound r5.9.3；320 项离屏 GPU 像素检查通过，覆盖遮挡、天空、重投影、反向深度及分辨率缩放。实际游戏场景仍需复测。
+
+### English
+
+- Fixed the base version at 0.5.0 and adopted incrementing alpha suffixes for small fixes, retaining the earlier 0.5.1/0.5.2 test changes.
+- Added an independent vanilla-terrain depth check for dedicated Copycat LOD meshes, preventing them from showing through foreground terrain when terrain handoff clears depth. Both opaque and translucent materials use the check.
+- Checked the local Complementary Unbound r5.9.3 archive. Passed 320 offscreen GPU pixel checks covering occlusion, sky, reprojection, reversed depth and resolution scaling; the reported in-game scene still requires verification.
+
 ## 0.5.2（1.21.1 NeoForge）— 2026-09-18
 
 ### 简体中文

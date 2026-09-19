@@ -29,8 +29,35 @@ public final class DistantShaders {
     private static AbstractRenderPipeline patchedOwner;
     private static boolean patchAvailable;
     private static boolean patchFailed;
+    private static AbstractRenderPipeline copycatOwner;
+    private static Shader copycatOpaque, copycatTranslucent;
 
     private DistantShaders() {}
+
+    public static Shader forCopycatPipeline(AbstractRenderPipeline pipeline, boolean translucent) {
+        if (copycatOwner != pipeline) {
+            if (copycatOpaque != null) copycatOpaque.free();
+            if (copycatTranslucent != null) copycatTranslucent.free();
+            copycatOpaque = copycatTranslucent = null;
+            copycatOwner = pipeline;
+        }
+        Shader shader = translucent ? copycatTranslucent : copycatOpaque;
+        if (shader == null) {
+            String source = ShaderLoader.parse("voxy:compat/distant.frag");
+            String fragment = translucent ? pipeline.patchTranslucentShader(null, source)
+                    : pipeline.patchOpaqueShader(null, source);
+            if (translucent && fragment == null) fragment = pipeline.patchOpaqueShader(null, source);
+            shader = Shader.make().define("COPYCAT_OCCLUSION")
+                    .defineIf("TRANSLUCENT", translucent).defineIf("PATCHED_SHADER", fragment != null)
+                    .addSource(ShaderType.VERTEX, fragment != null ? patchedVertex(pipeline)
+                            : ShaderLoader.parse("voxy:compat/distant.vert"))
+                    .addSource(ShaderType.FRAGMENT, fragment != null ? fragment : source)
+                    .compile().name(translucent ? "copycat_translucent" : "copycat_opaque");
+            if (translucent) copycatTranslucent = shader;
+            else copycatOpaque = shader;
+        }
+        return shader;
+    }
 
     public static void warmup(AbstractRenderPipeline pipeline) {
         if (!net.neoforged.fml.ModList.get().isLoaded("create")) {
