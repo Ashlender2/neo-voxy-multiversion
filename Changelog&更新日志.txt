@@ -16,6 +16,22 @@ Neo Voxy 更新日志 / Changelog
 - Maintain one 1.21.1 build: client required, server optional. Enable two-sided features only on negotiated channels; never send custom payloads to unsupported connections.
 - Remove the separate AGENTS.md and keep maintenance conventions in this changelog.
 
+## 0.3.5-alpha.1（1.20.1 Forge）— 2026-09-20
+
+### 简体中文
+
+- 修复 Create 轨道专属远景网格与普通轨道 LOD 同时绘制的问题：只在专属网格成功生成且进入其绘制范围时，按轨道方块位置屏蔽对应普通 LOD。
+- 专属轨道遵守原版地形的模板遮罩，避免覆盖近处已绘制的原版模型；关闭联动、超出接管范围或无专属网格时保留普通 LOD。
+- 烘焙失败时清理部分专属网格并允许重试；轨道模型标记参与去重，防止影响纹理相同的其他方块。
+- 构建、4 组完整地形着色器链接和 42 项离屏 GPU 检查通过；游戏内轨道光照与交接仍需复测。
+
+### English
+
+- Prevent dedicated Create track meshes and ordinary track LODs from drawing together. Suppress ordinary LODs by track-block position only after replacement meshes are built and within their drawing range.
+- Respect the vanilla-terrain stencil mask to avoid drawing over nearby original models. Retain ordinary LODs when integration is disabled, out of range, or no replacement is available.
+- Clear partial dedicated meshes and allow retries after bake failures; include the track marker in model deduplication to avoid affecting unrelated blocks with identical textures.
+- Build, four full terrain shader links and 42 offscreen GPU checks passed. In-game track lighting and handoff still require verification.
+
 ## 0.5.0-alpha.1（1.21.1 NeoForge）— 2026-09-19
 
 ### 简体中文

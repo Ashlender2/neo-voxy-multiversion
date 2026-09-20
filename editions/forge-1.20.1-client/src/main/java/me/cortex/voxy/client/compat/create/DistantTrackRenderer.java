@@ -45,6 +45,7 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
     private ResourceKey<Level> dimension;
     private long lastCheck;
     private long checksum;
+    private final java.util.Set<BlockPos> replacementBlocks = new java.util.HashSet<>();
 
     private record MeshUnit(DistantMesh mesh, double x, double y, double z) {}
     private record Turn(TrackGraph graph, TrackEdge edge,
@@ -80,6 +81,7 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
         try {
             this.rebuild(mc);
         } catch (Throwable t) {
+            this.clear();
             Logger.error("Distant Create track bake failed", t);
         }
     }
@@ -118,8 +120,8 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
                 glDisable(GL_CULL_FACE);
                 glDisable(GL_BLEND);
                 glEnable(GL_STENCIL_TEST);
-                glStencilFunc(GL_ALWAYS, 3, 0xFF);
-                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                glStencilFunc(GL_EQUAL, 1, 0x1);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
                 bound = true;
             }
             transform.set(viewport.MVP).translate((float) dx, (float) dy, (float) dz);
@@ -135,6 +137,8 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
     }
 
     private void rebuild(Minecraft mc) {
+        me.cortex.voxy.client.compat.distant.TrackLodReplacement.clear();
+        this.replacementBlocks.clear();
         for (MeshUnit unit : this.units) unit.mesh.free();
         this.units.clear();
         Map<BlockPos, BlockState> blocks = new LinkedHashMap<>();
@@ -173,6 +177,7 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
         }
         for (var entry : sections.entrySet()) bakeSection(mc, entry.getKey(), entry.getValue());
         for (Turn turn : turns) bakeTurn(mc, turn.curve);
+        me.cortex.voxy.client.compat.distant.TrackLodReplacement.upload(this.replacementBlocks);
     }
 
     private static void putAnchor(Minecraft mc, BlockPos pos, Map<BlockPos, BlockState> blocks) {
@@ -239,7 +244,10 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
                     light & 0xFFFF, light >>> 16 & 0xFFFF);
         }
         DistantMesh mesh = builder.build();
-        if (mesh != null) this.units.add(new MeshUnit(mesh, sx, sy, sz));
+        if (mesh != null) {
+            this.units.add(new MeshUnit(mesh, sx, sy, sz));
+            for (TrackBlockAt entry : blocks) this.replacementBlocks.add(entry.pos);
+        }
     }
 
     private void bakeTurn(Minecraft mc, com.simibubi.create.content.trains.track.BezierConnection curve) {
@@ -286,6 +294,8 @@ public final class DistantTrackRenderer implements LodPipelineHooks.Renderer {
     }
 
     private void clear() {
+        me.cortex.voxy.client.compat.distant.TrackLodReplacement.clear();
+        this.replacementBlocks.clear();
         for (MeshUnit unit : this.units) unit.mesh.free();
         this.units.clear();
         this.dimension = null;

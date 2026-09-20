@@ -180,6 +180,13 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
         MemoryUtil.memPutFloat(ptr, 0.0f); ptr += 4;
         MemoryUtil.memPutFloat(ptr, 0.0f); ptr += 4;
 
+        var config = me.cortex.voxy.client.config.VoxyConfig.CONFIG;
+        float near = Math.max(16, Minecraft.getInstance().options.getEffectiveRenderDistance() * 16);
+        float far = config.distantTrackMaxChunks == 0 ? config.getLodRenderDistanceBlocks() : config.distantTrackMaxChunks * 16;
+        MemoryUtil.memPutFloat(ptr, me.cortex.voxy.client.compat.distant.TrackLodReplacement.enabled() ? 1 : 0); ptr += 4;
+        MemoryUtil.memPutFloat(ptr, near * near); ptr += 4;
+        MemoryUtil.memPutFloat(ptr, far * far); ptr += 4;
+        MemoryUtil.memPutFloat(ptr, 0); ptr += 4;
         UploadStream.INSTANCE.commit();
     }
 
@@ -187,7 +194,7 @@ public class MDICSectionRenderer extends AbstractSectionRenderer<MDICViewport, B
     private void bindRenderingBuffers(MDICViewport viewport) {
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, this.uniform.id);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, this.geometryManager.getGeometryBuffer().id);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, this.geometryManager.getMetadataBuffer().id);
+        me.cortex.voxy.client.compat.distant.TrackLodReplacement.bind();
         this.modelStore.bind(3, 4, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, viewport.positionScratchBuffer.id);
         LightMapHelper.bind(1);
