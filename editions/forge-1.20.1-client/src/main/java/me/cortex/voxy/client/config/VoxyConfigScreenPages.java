@@ -371,6 +371,21 @@ public abstract class VoxyConfigScreenPages {
                             .setBinding((s, v) -> s.distantTrainMaxChunks = v, s -> s.distantTrainMaxChunks)
                             .setImpact(OptionImpact.MEDIUM)
                             .build())
+                    .add(OptionImpl.createBuilder(boolean.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createTracks"))
+                            .setTooltip(Component.translatable("voxy.config.compat.createTracks.tooltip"))
+                            .setControl(TickBoxControl::new)
+                            .setBinding((s, v) -> s.distantTracks = v, s -> s.distantTracks)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .add(OptionImpl.createBuilder(int.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createTrackDistance"))
+                            .setTooltip(Component.translatable("voxy.config.compat.distance.tooltip"))
+                            .setControl(opt -> new SliderControl(opt, 0, 512, 8,
+                                    v -> v == 0 ? Component.translatable("voxy.config.compat.lodDistance") : Component.literal(Integer.toString(v))))
+                            .setBinding((s, v) -> s.distantTrackMaxChunks = v, s -> s.distantTrackMaxChunks)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
                     .build());
         }
         pages.add(page("voxy.config.compat", groups));

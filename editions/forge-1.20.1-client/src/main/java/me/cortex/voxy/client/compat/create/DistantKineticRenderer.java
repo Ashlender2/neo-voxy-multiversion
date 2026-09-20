@@ -47,6 +47,13 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
         return CAPTURING.get();
     }
 
+    public static boolean shouldCullLive(BlockPos pos, net.minecraft.world.phys.Vec3 camera) {
+        Snapshot snapshot = INSTANCE.snapshots.get(pos.asLong());
+        if (snapshot == null || snapshot.mesh == null || !VoxyConfig.CONFIG.distantKinetics) return false;
+        double reach = Minecraft.getInstance().options.getEffectiveRenderDistance() * 16.0;
+        return pos.distToCenterSqr(camera.x, camera.y, camera.z) > reach * reach;
+    }
+
     @SubscribeEvent
     public void tick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -58,6 +65,7 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
         if (!mc.level.dimension().equals(this.dimension)) {
             this.clear();
             this.dimension = mc.level.dimension();
+            this.restore(mc.level);
         }
         int radius = mc.options.getEffectiveRenderDistance() + 1;
         int side = radius * 2 + 1;
@@ -84,6 +92,7 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
             snapshot.mesh.free();
             return true;
         });
+        this.syncFlywheelVisibility(mc);
     }
 
     @SubscribeEvent
@@ -109,11 +118,13 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
             int stateHash = kinetic.getBlockState().hashCode();
             Snapshot old = this.snapshots.get(key);
             if (old != null && old.stateHash == stateHash) continue;
-            DistantMesh mesh = capture(kinetic);
-            if (mesh == null) continue;
+            DistantMesh.Built built = capture(kinetic);
+            if (built.mesh() == null) continue;
             if (old != null) old.mesh.free();
             var pos = kinetic.getBlockPos();
-            this.snapshots.put(key, new Snapshot(pos.getX(), pos.getY(), pos.getZ(), stateHash, mesh));
+            this.snapshots.put(key, new Snapshot(pos.getX(), pos.getY(), pos.getZ(), stateHash, built.mesh()));
+            CreateSnapshotStore.saveKinetic(level, new CreateSnapshotStore.Kinetic(
+                    key, pos.getX(), pos.getY(), pos.getZ(), stateHash, built.bytes()));
         }
         if (present != null) {
             int cx = chunk.getPos().x;
@@ -122,16 +133,17 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
                 Snapshot snapshot = entry.getValue();
                 if ((snapshot.x >> 4) != cx || (snapshot.z >> 4) != cz || present.contains(entry.getKey())) return false;
                 snapshot.mesh.free();
+                CreateSnapshotStore.removeKinetic(level, entry.getKey());
                 return true;
             });
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static DistantMesh capture(KineticBlockEntity kinetic) {
+    private static DistantMesh.Built capture(KineticBlockEntity kinetic) {
         var dispatcher = Minecraft.getInstance().getBlockEntityRenderDispatcher();
         var renderer = dispatcher.getRenderer(kinetic);
-        if (renderer == null) return null;
+        if (renderer == null) return new DistantMesh.Built(null, null);
         var builder = new DistantMesh.Builder();
         int light = LevelRenderer.getLightColor(kinetic.getLevel(), kinetic.getBlockPos());
         int blockLight = light & 0xFFFF;
@@ -145,7 +157,20 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
         } finally {
             CAPTURING.set(false);
         }
-        return builder.build();
+        return builder.buildPersistent();
+    }
+
+    private void restore(ClientLevel level) {
+        int restored = 0;
+        for (var stored : CreateSnapshotStore.loadKinetics(level)) {
+            DistantMesh mesh = DistantMesh.fromBytes(stored.mesh());
+            if (mesh == null) continue;
+            Snapshot old = this.snapshots.put(stored.key(), new Snapshot(
+                    stored.x(), stored.y(), stored.z(), stored.stateHash(), mesh));
+            if (old != null) old.mesh.free();
+            restored++;
+        }
+        if (restored != 0) me.cortex.voxy.common.Logger.info("Restored " + restored + " Create kinetic LOD snapshot(s)");
     }
 
     @Override
@@ -153,7 +178,7 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
         var mc = Minecraft.getInstance();
         if (mc.level == null || !mc.level.dimension().equals(this.dimension)
                 || !VoxyConfig.CONFIG.distantKinetics || this.snapshots.isEmpty()) return;
-        double min = Math.max(16.0, mc.options.getEffectiveRenderDistance() * 16.0 - 12.0);
+        double min = Math.max(16.0, mc.options.getEffectiveRenderDistance() * 16.0);
         double minSq = min * min;
         double max = VoxyConfig.CONFIG.distantKineticMaxChunks == 0
                 ? VoxyConfig.CONFIG.getLodRenderDistanceBlocks()
@@ -176,6 +201,9 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
                 glDepthMask(true);
                 glDisable(GL_CULL_FACE);
                 glDisable(GL_BLEND);
+                glEnable(GL_STENCIL_TEST);
+                glStencilFunc(GL_ALWAYS, 3, 0xFF);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
                 bound = true;
             }
             transform.set(viewport.MVP).translate((float) dx, (float) dy, (float) dz);
@@ -185,12 +213,54 @@ public final class DistantKineticRenderer implements LodPipelineHooks.Renderer {
         if (bound) {
             glBindVertexArray(0);
             glUseProgram(0);
+            glStencilFunc(GL_EQUAL, 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         }
     }
 
     private void clear() {
+        this.setFlywheelVisibility(false);
         for (Snapshot snapshot : this.snapshots.values()) snapshot.mesh.free();
         this.snapshots.clear();
         this.scanCursor = 0;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void syncFlywheelVisibility(Minecraft mc) {
+        var manager = dev.engine_room.flywheel.impl.visualization.VisualizationManagerImpl.get(mc.level);
+        if (manager == null) return;
+        var visualManager = (dev.engine_room.flywheel.impl.visualization.VisualManagerImpl) manager.blockEntities();
+        var storage = (dev.engine_room.flywheel.impl.visualization.storage.BlockEntityStorage) visualManager.getStorage();
+        var camera = mc.gameRenderer.getMainCamera().getPosition();
+        for (var entry : this.snapshots.entrySet()) {
+            var visual = storage.visualAtPos(entry.getKey());
+            if (visual == null) continue;
+            boolean hidden = shouldCullLive(BlockPos.of(entry.getKey()), camera);
+            visual.collectCrumblingInstances(instance -> {
+                if (instance != null) {
+                    instance.setVisible(!hidden);
+                    if (!hidden) instance.setChanged();
+                }
+            });
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void setFlywheelVisibility(boolean hidden) {
+        var mc = Minecraft.getInstance();
+        var manager = dev.engine_room.flywheel.impl.visualization.VisualizationManagerImpl.get(mc.level);
+        if (manager == null) return;
+        var visualManager = (dev.engine_room.flywheel.impl.visualization.VisualManagerImpl) manager.blockEntities();
+        var storage = (dev.engine_room.flywheel.impl.visualization.storage.BlockEntityStorage) visualManager.getStorage();
+        for (long key : this.snapshots.keySet()) {
+            var visual = storage.visualAtPos(key);
+            if (visual == null) continue;
+            visual.collectCrumblingInstances(instance -> {
+                if (instance != null) {
+                    instance.setVisible(!hidden);
+                    if (!hidden) instance.setChanged();
+                }
+            });
+        }
     }
 }

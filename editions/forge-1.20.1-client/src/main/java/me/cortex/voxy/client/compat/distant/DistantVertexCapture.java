@@ -42,15 +42,15 @@ public final class DistantVertexCapture implements MultiBufferSource, VertexCons
     private int defaultA;
 
     public DistantVertexCapture(DistantMesh.Builder builder, boolean chunkLayersOnly) {
-        this(builder, chunkLayersOnly, 8, 248);
+        this(builder, chunkLayersOnly, 0, 240);
     }
 
     public DistantVertexCapture(DistantMesh.Builder builder, boolean chunkLayersOnly,
                                 int defaultBlockLight, int defaultSkyLight) {
         this.builder = builder;
         this.chunkLayersOnly = chunkLayersOnly;
-        this.defaultBlockLight = defaultBlockLight;
-        this.defaultSkyLight = defaultSkyLight;
+        this.defaultBlockLight = centerLight(defaultBlockLight);
+        this.defaultSkyLight = centerLight(defaultSkyLight);
         this.reset();
     }
 
@@ -91,11 +91,13 @@ public final class DistantVertexCapture implements MultiBufferSource, VertexCons
 
     @Override
     public VertexConsumer uv2(int u, int v) {
-        if ((u | v) != 0) {
-            this.blockLight = u;
-            this.skyLight = v;
-        }
+        this.blockLight = centerLight(u);
+        this.skyLight = centerLight(v);
         return this;
+    }
+
+    private static int centerLight(int value) {
+        return Math.min(255, Math.max(0, value) + 8);
     }
 
     @Override

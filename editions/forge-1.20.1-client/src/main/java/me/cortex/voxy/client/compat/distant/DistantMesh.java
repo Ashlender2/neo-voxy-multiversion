@@ -8,6 +8,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lwjgl.system.MemoryUtil;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.nio.ByteBuffer;
 
@@ -48,6 +51,17 @@ public final class DistantMesh {
         glEnableVertexArrayAttrib(this.vao, 4);
         glVertexArrayAttribIFormat(this.vao, 4, 1, GL_UNSIGNED_BYTE, 26);
         glVertexArrayAttribBinding(this.vao, 4, 0);
+    }
+
+    public static DistantMesh fromBytes(byte[] bytes) {
+        if (bytes == null || bytes.length == 0 || bytes.length % (STRIDE * 4) != 0) return null;
+        ByteBuffer data = MemoryUtil.memAlloc(bytes.length);
+        try {
+            data.put(bytes).flip();
+            return new DistantMesh(data, bytes.length / (STRIDE * 4));
+        } finally {
+            MemoryUtil.memFree(data);
+        }
     }
 
     private static void ensureIndices(int quads) {
@@ -107,6 +121,81 @@ public final class DistantMesh {
             }
         }
 
+        public void blockModelLit(BlockState state, BakedModel model, BlockPos tintPos,
+                                  float ox, float oy, float oz, int blockLight, int skyLight) {
+            this.random.setSeed(42);
+            var layers = model.getRenderTypes(state, this.random, net.minecraftforge.client.model.data.ModelData.EMPTY);
+            for (var layer : layers) {
+                for (Direction direction : Direction.values()) {
+                    this.random.setSeed(42);
+                    for (BakedQuad quad : model.getQuads(state, direction, this.random,
+                            net.minecraftforge.client.model.data.ModelData.EMPTY, layer)) {
+                        this.quadLit(state, tintPos, quad, null, ox, oy, oz, blockLight, skyLight);
+                    }
+                }
+                this.random.setSeed(42);
+                for (BakedQuad quad : model.getQuads(state, null, this.random,
+                        net.minecraftforge.client.model.data.ModelData.EMPTY, layer)) {
+                    this.quadLit(state, tintPos, quad, null, ox, oy, oz, blockLight, skyLight);
+                }
+            }
+        }
+
+        public void transformedModel(BakedModel model, Matrix4f transform, int blockLight, int skyLight) {
+            for (Direction direction : Direction.values()) {
+                this.random.setSeed(42);
+                for (BakedQuad quad : model.getQuads(null, direction, this.random)) {
+                    this.quadLit(null, BlockPos.ZERO, quad, transform, 0, 0, 0, blockLight, skyLight);
+                }
+            }
+            this.random.setSeed(42);
+            for (BakedQuad quad : model.getQuads(null, null, this.random)) {
+                this.quadLit(null, BlockPos.ZERO, quad, transform, 0, 0, 0, blockLight, skyLight);
+            }
+        }
+
+        private void quadLit(BlockState state, BlockPos tintPos, BakedQuad quad, Matrix4f transform,
+                             float ox, float oy, float oz, int blockLight, int skyLight) {
+            Direction face = quad.getDirection();
+            if (transform != null) {
+                Vector3f normal = transform.transformDirection(new Vector3f(
+                        face.getStepX(), face.getStepY(), face.getStepZ()));
+                float ax = Math.abs(normal.x), ay = Math.abs(normal.y), az = Math.abs(normal.z);
+                face = ay >= ax && ay >= az ? (normal.y >= 0 ? Direction.UP : Direction.DOWN)
+                        : az >= ax ? (normal.z >= 0 ? Direction.SOUTH : Direction.NORTH)
+                        : (normal.x >= 0 ? Direction.EAST : Direction.WEST);
+            }
+            float shade = switch (face) {
+                case DOWN -> 0.5f;
+                case NORTH, SOUTH -> 0.8f;
+                case WEST, EAST -> 0.6f;
+                default -> 1.0f;
+            };
+            int color = state != null && quad.isTinted() ? Minecraft.getInstance().getBlockColors().getColor(
+                    state, Minecraft.getInstance().level, tintPos, quad.getTintIndex()) : 0xFFFFFF;
+            if (color == -1) color = 0xFFFFFF;
+            int r = Math.min(255, Math.round(((color >> 16) & 255) * shade));
+            int g = Math.min(255, Math.round(((color >> 8) & 255) * shade));
+            int b = Math.min(255, Math.round((color & 255) * shade));
+            color = r << 16 | g << 8 | b;
+            int[] vertices = quad.getVertices();
+            int stride = vertices.length / 4;
+            Vector4f point = new Vector4f();
+            for (int vertex = 0; vertex < 4; vertex++) {
+                int base = vertex * stride;
+                float x = Float.intBitsToFloat(vertices[base]);
+                float y = Float.intBitsToFloat(vertices[base + 1]);
+                float z = Float.intBitsToFloat(vertices[base + 2]);
+                if (transform != null) {
+                    transform.transform(point.set(x, y, z, 1.0f));
+                    x = point.x; y = point.y; z = point.z;
+                }
+                this.vertex(x + ox, y + oy, z + oz,
+                        Float.intBitsToFloat(vertices[base + 4]), Float.intBitsToFloat(vertices[base + 5]),
+                        color, 255, Math.min(255, blockLight + 8), Math.min(255, skyLight + 8), face.ordinal());
+            }
+        }
+
         private void quad(BlockState state, BlockPos tintPos, BakedQuad quad, float ox, float oy, float oz) {
             int[] vertices = quad.getVertices();
             int stride = vertices.length / 4;
@@ -134,18 +223,42 @@ public final class DistantMesh {
         }
 
         public DistantMesh build() {
+            return this.finish(false).mesh();
+        }
+
+        public Built buildPersistent() {
+            return this.finish(true);
+        }
+
+        public void discard() {
+            if (this.data != null) {
+                MemoryUtil.memFree(this.data);
+                this.data = null;
+            }
+        }
+
+        private Built finish(boolean keepData) {
             int quads = this.vertices / 4;
             if (quads == 0) {
                 MemoryUtil.memFree(this.data);
-                return null;
+                this.data = null;
+                return new Built(null, null);
             }
             this.data.flip();
             this.data.limit(quads * 4 * STRIDE);
             try {
-                return new DistantMesh(this.data, quads);
+                byte[] bytes = null;
+                if (keepData) {
+                    bytes = new byte[this.data.remaining()];
+                    this.data.duplicate().get(bytes);
+                }
+                return new Built(new DistantMesh(this.data, quads), bytes);
             } finally {
                 MemoryUtil.memFree(this.data);
+                this.data = null;
             }
         }
     }
+
+    public record Built(DistantMesh mesh, byte[] bytes) {}
 }

@@ -128,8 +128,11 @@
   "voxy.config.compat.createKinetics.tooltip": "捕获齿轮、传动轴等方块实体的专用旋转模型，而不是将其作为普通方块代替。",
   "voxy.config.compat.createKineticDistance": "机械模型距离",
   "voxy.config.compat.createTrains": "机械动力：远景列车",
-  "voxy.config.compat.createTrains.tooltip": "在原版渲染范围外绘制列车车体；超出服务端实体同步范围后保留最后位置。",
+  "voxy.config.compat.createTrains.tooltip": "在单人世界中持续采样已加载列车，并在原版渲染范围外绘制；多人服务器需服务端同步支持。",
   "voxy.config.compat.createTrainDistance": "列车距离",
+  "voxy.config.compat.createTracks": "机械动力：远景列车轨道",
+  "voxy.config.compat.createTracks.tooltip": "在原版渲染范围外绘制直线与弯曲列车轨道。",
+  "voxy.config.compat.createTrackDistance": "列车轨道距离",
   "voxy.config.compat.distance.tooltip": "0 跟随 Voxy LOD 距离，其他数值为最大区块距离。",
   "voxy.config.compat.lodDistance": "LOD 距离"
 }

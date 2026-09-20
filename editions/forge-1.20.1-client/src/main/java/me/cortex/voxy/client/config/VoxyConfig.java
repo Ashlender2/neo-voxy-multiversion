@@ -59,6 +59,8 @@ public class VoxyConfig
     public int distantContraptionMaxChunks = 0;
     public boolean distantTrains = true;
     public int distantTrainMaxChunks = 0;
+    public boolean distantTracks = true;
+    public int distantTrackMaxChunks = 0;
     public boolean distantKinetics = true;
     public int distantKineticMaxChunks = 0;
 
@@ -154,6 +156,7 @@ public class VoxyConfig
         this.distantBeaconMaxChunks = clamp(this.distantBeaconMaxChunks, 0, 512);
         this.distantContraptionMaxChunks = clamp(this.distantContraptionMaxChunks, 0, 512);
         this.distantTrainMaxChunks = clamp(this.distantTrainMaxChunks, 0, 512);
+        this.distantTrackMaxChunks = clamp(this.distantTrackMaxChunks, 0, 512);
         this.distantKineticMaxChunks = clamp(this.distantKineticMaxChunks, 0, 512);
         if (!"water".equals(this.biomeBlendScope) && !"water_grass".equals(this.biomeBlendScope)) {
             this.biomeBlendScope = "water";

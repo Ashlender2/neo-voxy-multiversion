@@ -5,6 +5,9 @@ layout(location = 2) in vec2 aLightUv;
 layout(location = 3) in vec4 aColor;
 layout(location = 4) in uint aFace;
 layout(location = 0) uniform mat4 uTransform;
+#ifdef UNIFORM_LIGHT
+layout(location = 4) uniform vec2 uLightOverride;
+#endif
 layout(location = 0) out vec2 fUv;
 layout(location = 1) out vec2 fLightUv;
 layout(location = 2) out vec4 fColor;
@@ -19,6 +22,10 @@ void main() {
     fFace = aFace;
 #endif
     fUv = aUv;
+#ifdef UNIFORM_LIGHT
+    fLightUv = uLightOverride;
+#else
     fLightUv = aLightUv;
+#endif
     fColor = aColor;
 }

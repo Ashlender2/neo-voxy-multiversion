@@ -105,8 +105,11 @@
   "voxy.config.compat.createKinetics.tooltip": "Captures dedicated rotating block-entity models such as cogwheels and shafts instead of substituting ordinary blocks.",
   "voxy.config.compat.createKineticDistance": "Kinetic model distance",
   "voxy.config.compat.createTrains": "Create: distant trains",
-  "voxy.config.compat.createTrains.tooltip": "Draws train bodies beyond vanilla render distance and holds their last position beyond entity tracking.",
+  "voxy.config.compat.createTrains.tooltip": "Continuously samples loaded trains in singleplayer and draws them beyond vanilla range; multiplayer needs server sync support.",
   "voxy.config.compat.createTrainDistance": "Train distance",
+  "voxy.config.compat.createTracks": "Create: distant train tracks",
+  "voxy.config.compat.createTracks.tooltip": "Draws straight and curved train tracks beyond vanilla render distance.",
+  "voxy.config.compat.createTrackDistance": "Train track distance",
   "voxy.config.compat.distance.tooltip": "Zero follows Voxy's LOD distance; other values are maximum chunk distance.",
   "voxy.config.compat.lodDistance": "LOD distance"
 }

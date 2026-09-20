@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -118,7 +119,8 @@ public class SoftwareModelTextureBakery {
         int unculledQuads = 0;
         for (Direction direction : new Direction[] { Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH,
                 Direction.WEST, Direction.EAST, null }) {
-            var quads = model.getQuads(state, direction, new SingleThreadedRandomSource(42L));
+            var quads = model.getQuads(state, direction, new SingleThreadedRandomSource(42L),
+                    ModelData.EMPTY, layer);
             if (direction != null && !quads.isEmpty()) crossCandidate = false;
             for (var quad : quads) {
                 if (direction == null && crossCandidate) {

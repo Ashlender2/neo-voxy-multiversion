@@ -62,6 +62,9 @@ public abstract class VoxyClient {
                 var kineticRenderer = me.cortex.voxy.client.compat.create.DistantKineticRenderer.INSTANCE;
                 net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(kineticRenderer);
                 me.cortex.voxy.client.compat.LodPipelineHooks.register(kineticRenderer);
+                var trackRenderer = me.cortex.voxy.client.compat.create.DistantTrackRenderer.INSTANCE;
+                net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(trackRenderer);
+                me.cortex.voxy.client.compat.LodPipelineHooks.register(trackRenderer);
             }
 
             if (!Capabilities.INSTANCE.subgroup) {
