@@ -1,7 +1,7 @@
 {
   "voxy.config.title": "Voxy",
   "voxy.config.general": "常规",
-  "voxy.config.rendering": "Neo-Voxy",
+  "voxy.config.rendering": "渲染",
   "voxy.config.group.general": "基础",
   "voxy.config.group.threads": "线程",
   "voxy.config.group.data": "数据",
@@ -116,5 +116,20 @@
   "message.voxy.reloaded": "Voxy 已重载",
   "message.voxy.reload_unavailable": "Voxy 当前未启用",
   "message.voxy.rendering_enabled": "Voxy 渲染已启用",
-  "message.voxy.rendering_disabled": "Voxy 渲染已禁用"
+  "message.voxy.rendering_disabled": "Voxy 渲染已禁用",
+  "voxy.config.compat": "远景联动",
+  "voxy.config.compat.beacons": "远景信标光束",
+  "voxy.config.compat.beacons.tooltip": "在原版渲染范围外保留本次游戏中见过的信标光束。",
+  "voxy.config.compat.beaconDistance": "信标光束距离",
+  "voxy.config.compat.createContraptions": "机械动力：远景动态结构",
+  "voxy.config.compat.createContraptions.tooltip": "在原版渲染范围外绘制机械动力动态结构的方块模型。",
+  "voxy.config.compat.createContraptionDistance": "动态结构距离",
+  "voxy.config.compat.createKinetics": "机械动力：远景机械模型",
+  "voxy.config.compat.createKinetics.tooltip": "捕获齿轮、传动轴等方块实体的专用旋转模型，而不是将其作为普通方块代替。",
+  "voxy.config.compat.createKineticDistance": "机械模型距离",
+  "voxy.config.compat.createTrains": "机械动力：远景列车",
+  "voxy.config.compat.createTrains.tooltip": "在原版渲染范围外绘制列车车体；超出服务端实体同步范围后保留最后位置。",
+  "voxy.config.compat.createTrainDistance": "列车距离",
+  "voxy.config.compat.distance.tooltip": "0 跟随 Voxy LOD 距离，其他数值为最大区块距离。",
+  "voxy.config.compat.lodDistance": "LOD 距离"
 }

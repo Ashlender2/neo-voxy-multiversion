@@ -14,6 +14,7 @@ repositories {
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
     maven { url = 'https://maven.blamejared.com/' }
+    maven { url = 'https://maven.createmod.net/' }
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -83,6 +84,9 @@ dependencies {
     // supplies the Iris-compatible implementation API used by the shader integration sources.
     modImplementation "org.embeddedt:embeddium-${project.minecraft_version}:${project.embeddium_version}"
     modCompileOnly "maven.modrinth:oculus:${project.oculus_compile_version}"
+    modCompileOnly("maven.modrinth:LNytGWDc:8amzvn9x") { transitive = false }
+    modCompileOnly("net.createmod.ponder:Ponder-Forge-1.20.1:1.0.91") { transitive = false }
+    modCompileOnly("dev.engine-room.flywheel:flywheel-forge-1.20.1:1.0.5") { transitive = false }
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly 'io.github.llamalad7:mixinextras-common:0.5.4'

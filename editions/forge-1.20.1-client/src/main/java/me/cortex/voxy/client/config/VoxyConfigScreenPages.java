@@ -306,6 +306,74 @@ public abstract class VoxyConfigScreenPages {
                         .build()
                 ).build());
         pages.add(page("voxy.config.fakesight", groups));
+        groups.clear();
+        groups.add(OptionGroup.createBuilder()
+                .add(OptionImpl.createBuilder(boolean.class, storage)
+                        .setName(Component.translatable("voxy.config.compat.beacons"))
+                        .setTooltip(Component.translatable("voxy.config.compat.beacons.tooltip"))
+                        .setControl(TickBoxControl::new)
+                        .setBinding((s, v) -> s.distantBeacons = v, s -> s.distantBeacons)
+                        .setImpact(OptionImpact.LOW)
+                        .build())
+                .add(OptionImpl.createBuilder(int.class, storage)
+                        .setName(Component.translatable("voxy.config.compat.beaconDistance"))
+                        .setTooltip(Component.translatable("voxy.config.compat.distance.tooltip"))
+                        .setControl(opt -> new SliderControl(opt, 0, 512, 8,
+                                v -> v == 0 ? Component.translatable("voxy.config.compat.lodDistance") : Component.literal(Integer.toString(v))))
+                        .setBinding((s, v) -> s.distantBeaconMaxChunks = v, s -> s.distantBeaconMaxChunks)
+                        .setImpact(OptionImpact.LOW)
+                        .build())
+                .build());
+        if (net.minecraftforge.fml.ModList.get().isLoaded("create")) {
+            groups.add(OptionGroup.createBuilder()
+                    .add(OptionImpl.createBuilder(boolean.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createContraptions"))
+                            .setTooltip(Component.translatable("voxy.config.compat.createContraptions.tooltip"))
+                            .setControl(TickBoxControl::new)
+                            .setBinding((s, v) -> s.distantContraptions = v, s -> s.distantContraptions)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .add(OptionImpl.createBuilder(int.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createContraptionDistance"))
+                            .setTooltip(Component.translatable("voxy.config.compat.distance.tooltip"))
+                            .setControl(opt -> new SliderControl(opt, 0, 512, 8,
+                                    v -> v == 0 ? Component.translatable("voxy.config.compat.lodDistance") : Component.literal(Integer.toString(v))))
+                            .setBinding((s, v) -> s.distantContraptionMaxChunks = v, s -> s.distantContraptionMaxChunks)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .add(OptionImpl.createBuilder(boolean.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createKinetics"))
+                            .setTooltip(Component.translatable("voxy.config.compat.createKinetics.tooltip"))
+                            .setControl(TickBoxControl::new)
+                            .setBinding((s, v) -> s.distantKinetics = v, s -> s.distantKinetics)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .add(OptionImpl.createBuilder(int.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createKineticDistance"))
+                            .setTooltip(Component.translatable("voxy.config.compat.distance.tooltip"))
+                            .setControl(opt -> new SliderControl(opt, 0, 512, 8,
+                                    v -> v == 0 ? Component.translatable("voxy.config.compat.lodDistance") : Component.literal(Integer.toString(v))))
+                            .setBinding((s, v) -> s.distantKineticMaxChunks = v, s -> s.distantKineticMaxChunks)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .add(OptionImpl.createBuilder(boolean.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createTrains"))
+                            .setTooltip(Component.translatable("voxy.config.compat.createTrains.tooltip"))
+                            .setControl(TickBoxControl::new)
+                            .setBinding((s, v) -> s.distantTrains = v, s -> s.distantTrains)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .add(OptionImpl.createBuilder(int.class, storage)
+                            .setName(Component.translatable("voxy.config.compat.createTrainDistance"))
+                            .setTooltip(Component.translatable("voxy.config.compat.distance.tooltip"))
+                            .setControl(opt -> new SliderControl(opt, 0, 512, 8,
+                                    v -> v == 0 ? Component.translatable("voxy.config.compat.lodDistance") : Component.literal(Integer.toString(v))))
+                            .setBinding((s, v) -> s.distantTrainMaxChunks = v, s -> s.distantTrainMaxChunks)
+                            .setImpact(OptionImpact.MEDIUM)
+                            .build())
+                    .build());
+        }
+        pages.add(page("voxy.config.compat", groups));
         return List.copyOf(pages);
     }
 

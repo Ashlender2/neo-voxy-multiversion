@@ -93,5 +93,20 @@
   "message.voxy.reloaded": "Voxy reloaded",
   "message.voxy.reload_unavailable": "Voxy is not active",
   "message.voxy.rendering_enabled": "Voxy rendering enabled",
-  "message.voxy.rendering_disabled": "Voxy rendering disabled"
+  "message.voxy.rendering_disabled": "Voxy rendering disabled",
+  "voxy.config.compat": "Distant Integrations",
+  "voxy.config.compat.beacons": "Distant beacon beams",
+  "voxy.config.compat.beacons.tooltip": "Keeps beacon beams seen during this session beyond vanilla render distance.",
+  "voxy.config.compat.beaconDistance": "Beacon beam distance",
+  "voxy.config.compat.createContraptions": "Create: distant contraptions",
+  "voxy.config.compat.createContraptions.tooltip": "Draws Create contraption block models beyond vanilla render distance.",
+  "voxy.config.compat.createContraptionDistance": "Contraption distance",
+  "voxy.config.compat.createKinetics": "Create: distant kinetic models",
+  "voxy.config.compat.createKinetics.tooltip": "Captures dedicated rotating block-entity models such as cogwheels and shafts instead of substituting ordinary blocks.",
+  "voxy.config.compat.createKineticDistance": "Kinetic model distance",
+  "voxy.config.compat.createTrains": "Create: distant trains",
+  "voxy.config.compat.createTrains.tooltip": "Draws train bodies beyond vanilla render distance and holds their last position beyond entity tracking.",
+  "voxy.config.compat.createTrainDistance": "Train distance",
+  "voxy.config.compat.distance.tooltip": "Zero follows Voxy's LOD distance; other values are maximum chunk distance.",
+  "voxy.config.compat.lodDistance": "LOD distance"
 }
