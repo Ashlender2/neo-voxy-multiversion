@@ -864,19 +864,21 @@ public class ModelFactory {
         return result;
     }
 
-    private static BlockColor getColourProvider(Block block) {
+    private BlockColor getColourProvider(Block block) {
         BlockState state = block.defaultBlockState();
         var colors = Minecraft.getInstance().getBlockColors();
-        int colour = colors.getColor(state, null, BlockPos.ZERO, 0);
-        // Keep the pre-foliage-fix behaviour for fluids and all other blocks:
-        // their null-context probe uses 0 as the no-provider sentinel.  The
-        // 1.20.1 renderer additionally returns -1 for unregistered foliage;
-        // only treat that value as absent for leaves, otherwise water would be
-        // routed through a new tint path and become white in no-shader LODs.
+        BlockColor provider = colors::getColor;
+        int colour;
+        try {
+            colour = captureColourConstant(provider, state, DEFAULT_BIOME);
+        } catch (Exception ignored) {
+            return null;
+        }
+        // In 1.20.1, leaves use -1 for a missing provider; fluids still need the existing path.
         if (colour == 0 || (isLeafBlockState(state) && colour == -1)) {
             return null;
         }
-        return colors::getColor;
+        return provider;
     }
 
     //TODO: add a method to detect biome dependent colours (can do by detecting if getColor is ever called)
