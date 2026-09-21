@@ -16,6 +16,20 @@ Neo Voxy 更新日志 / Changelog
 - Maintain one 1.21.1 build: client required, server optional. Enable two-sided features only on negotiated channels; never send custom payloads to unsupported connections.
 - Remove the separate AGENTS.md and keep maintenance conventions in this changelog.
 
+## 0.5.0-alpha.2（1.21.1 NeoForge）— 2026-09-21
+
+### 简体中文
+
+- 参照社区版重新整理 NeoForge 入口、配置页面、渲染管线、模型上传、世界缓存与更新路径；保留现有配置 ID、网络门控、渲染顺序和缓存格式。
+- 将配置注册拆分为通用、渲染、实验性、请求距离和模组联动页面，补充必要的中文数据流与生命周期说明。
+- 整理客户端初始化、实例关闭、资源复用和 LOD 区段更新流程；构建验证通过，未改变对外配置格式。
+
+### English
+
+- Reorganized the NeoForge entry point, configuration pages, render pipeline, model upload, world cache and update paths after the community edition while retaining existing option IDs, network gates, render order and cache formats.
+- Split configuration registration into general, rendering, experimental, request-distance and mod-integration pages, adding concise Chinese notes for important data flow and lifecycle boundaries.
+- Cleaned up client initialization, instance shutdown, resource reuse and LOD-section updates. Builds passed without changing the public configuration format.
+
 ## 0.3.5-alpha.1（1.20.1 Forge）— 2026-09-20
 
 ### 简体中文
