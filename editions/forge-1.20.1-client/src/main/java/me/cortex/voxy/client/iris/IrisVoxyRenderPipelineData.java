@@ -38,6 +38,7 @@ import static org.lwjgl.opengl.ARBUniformBufferObject.glBindBufferBase;
 import static org.lwjgl.opengl.GL33C.glBindSampler;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER;
 
+/** 1.20.1 Forge 的 Iris 管线数据桥接，维护 shader 目标、uniform 和 SSBO。 */
 public class IrisVoxyRenderPipelineData {
     public IrisVoxyRenderPipeline thePipeline;
     public final int[] opaqueDrawTargets;

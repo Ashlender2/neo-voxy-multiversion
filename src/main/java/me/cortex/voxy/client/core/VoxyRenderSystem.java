@@ -560,11 +560,11 @@ public class VoxyRenderSystem {
         float INCREASE_PER_SECOND = 60;
         float DECREASE_PER_SECOND = 30;
         if (fps < MIN_FPS) {
-            VoxyConfig.CONFIG.subDivisionSize = Math.min(VoxyConfig.CONFIG.subDivisionSize + INCREASE_PER_SECOND / Math.max(1f, fps), 256);
+            VoxyConfig.CONFIG.subDivisionSize = Math.min(VoxyConfig.CONFIG.subDivisionSize + INCREASE_PER_SECOND / Math.max(1f, fps), VoxyConfig.MAX_SUBDIVISION_SIZE);
         }
 
         if (MAX_FPS < fps && canDecreaseSize) {
-            VoxyConfig.CONFIG.subDivisionSize = Math.max(VoxyConfig.CONFIG.subDivisionSize - DECREASE_PER_SECOND / Math.max(1f, fps), 28);
+            VoxyConfig.CONFIG.subDivisionSize = Math.max(VoxyConfig.CONFIG.subDivisionSize - DECREASE_PER_SECOND / Math.max(1f, fps), VoxyConfig.MIN_SUBDIVISION_SIZE);
         }
     }
 

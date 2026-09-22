@@ -5,11 +5,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import me.cortex.voxy.client.config.VoxyConfig;
 import me.cortex.voxy.client.core.model.ModelFactory;
 import me.cortex.voxy.common.util.UnsafeUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import me.cortex.voxy.client.config.VoxyConfig;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -49,6 +49,7 @@ import static org.lwjgl.opengl.GL21.GL_PIXEL_PACK_BUFFER;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30C.glBindFramebuffer;
 
+/** 1.20.1 Forge 的离线模型投影器；输出布局与渲染器读取顺序保持一致。 */
 public class SoftwareModelTextureBakery {
     public static final int FLAG_CENTERED_GROUND_CROSS = 1 << 4;
     // Note: the first bit of metadata is if alpha discard is enabled
@@ -75,7 +76,7 @@ public class SoftwareModelTextureBakery {
 
             RenderSystem.recordRenderCall(() -> {
                 try {
-                    _doSetupTexture(textureId);
+                    doSetupTexture(textureId);
                     future.complete(null);
                 } catch (Exception e) {
                     future.completeExceptionally(e);
@@ -84,11 +85,12 @@ public class SoftwareModelTextureBakery {
 
             future.join();
         } else {
-            _doSetupTexture(textureId);
+            doSetupTexture(textureId);
         }
     }
 
-    private void _doSetupTexture(int glId) {
+    /** 在读取图集前清空像素缓冲绑定，完成后恢复 OpenGL 状态。 */
+    private void doSetupTexture(int glId) {
         glBindTexture(GL_TEXTURE_2D, glId);
         int width = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH);
         int height = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT);

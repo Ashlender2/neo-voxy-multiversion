@@ -15,10 +15,12 @@ import static org.lwjgl.opengl.GL20C.nglUniformMatrix4fv;
 import static org.lwjgl.opengl.GL33C.glBindSampler;
 import static org.lwjgl.opengl.GL45C.glBindTextureUnit;
 
+/** 管理兼容模组远景绘制使用的 shader，并按管线缓存补丁结果。 */
 public final class DistantShaders {
     private static Shader vertexLight;
     private static Shader uniformLight;
     private static Shader depthOnly;
+    private static AbstractRenderPipeline depthOwner;
 
     private static Shader patchedVertexLight;
     private static Shader patchedUniformLight;
@@ -189,10 +191,16 @@ public final class DistantShaders {
         return uniformLight;
     }
 
-    public static Shader depthOnly() {
+    public static Shader depthOnly(AbstractRenderPipeline pipeline) {
+        if (depthOwner != pipeline) {
+            if (depthOnly != null) depthOnly.free();
+            depthOnly = null;
+            depthOwner = pipeline;
+        }
         if (depthOnly == null) {
             depthOnly = Shader.make()
-                    .add(ShaderType.VERTEX, "voxy:compat/distant.vert")
+                    .define("TRAIN_DEPTH_REPLAY")
+                    .addSource(ShaderType.VERTEX, patchedVertex(pipeline))
                     .add(ShaderType.FRAGMENT, "voxy:compat/distant_depth.frag")
                     .compile().name("distant_depth_only");
         }

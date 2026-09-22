@@ -52,24 +52,12 @@ import static me.cortex.voxy.client.core.model.ModelStore.MODEL_SIZE;
 import static org.lwjgl.opengl.ARBDirectStateAccess.nglTextureSubImage2D;
 import static org.lwjgl.opengl.GL11.*;
 
-//Manages the storage and updating of model states, textures and colours
-
-//Also has a fast long[] based metadata lookup for when the terrain mesher needs to look up the face occlusion data
-
-//TODO: support more than 65535 states, what should actually happen is a blockstate is registered, the model data is generated, then compared
-// to all other models already loaded, if it is a duplicate, create a mapping from the id to the already loaded id, this will help with meshing aswell
-// as leaves and such will be able to be merged
-
-
-
-//TODO: NOTE!!! is it worth even uploading as a 16x16 texture, since automatic lod selection... doing 8x8 textures might be perfectly ok!!!
-// this _quarters_ the memory requirements for the texture atlas!!! WHICH IS HUGE saving
+/** 管理 1.20.1 的模型状态、六面纹理和供建面器读取的元数据缓存。 */
 public class ModelFactory {
     public static final int MODEL_TEXTURE_SIZE = 16;
     public static final int LAYERS = Integer.numberOfTrailingZeros(MODEL_TEXTURE_SIZE);
 
-    //TODO: replace the fluid BlockState with a client model id integer of the fluidState, requires looking up
-    // the fluid state in the mipper
+    // 模型去重键的字段顺序与 GPU 元数据写入顺序保持一致。
     private record ModelEntry(ColourDepthTextureData down, ColourDepthTextureData up, ColourDepthTextureData north, ColourDepthTextureData south, ColourDepthTextureData west, ColourDepthTextureData east, int fluidBlockStateId, int tintingColour, boolean leafModel, boolean trackModel) {
         public ModelEntry(ColourDepthTextureData[] textures, int fluidBlockStateId, int tintingColour, boolean leafModel, boolean trackModel) {
             this(textures[0], textures[1], textures[2], textures[3], textures[4], textures[5], fluidBlockStateId, tintingColour, leafModel, trackModel);
@@ -164,6 +152,8 @@ public class ModelFactory {
 
     private static final record BlockBake(int blockId, BlockState state) {
     }
+
+    // ---- 模型登记与异步上传 -------------------------------------------
 
     public boolean addEntry(int blockId) {
         if (this.idMappings[blockId] != -1) {
@@ -316,6 +306,7 @@ public class ModelFactory {
         this.biomeQueue.add(biome);
     }
 
+    /** 在服务线程上推进模型和生物群系队列，返回是否仍有待处理工作。 */
     public boolean processAllThings() {
         var biomeEntry = this.biomeQueue.poll();
         while (biomeEntry != null) {
@@ -403,6 +394,8 @@ public class ModelFactory {
             }
         }
     }
+
+    // ---- 纹理元数据与染色 ---------------------------------------------
 
     private ModelBakeResultUpload processTextureBakeResult(int blockId, BlockState blockState,
                                                             ColourDepthTextureData[] textureData,
@@ -1017,6 +1010,8 @@ public class ModelFactory {
         }
         return res;
     }
+
+    // ---- 渲染热路径查询与资源释放 -------------------------------------
 
     public int[] _unsafeRawAccess() {
         return this.idMappings;
